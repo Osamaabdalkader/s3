@@ -6,6 +6,15 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let debugMode = false;
 let currentUser = null;
 
+// خريطة الصفحات وملفاتها
+const pageFiles = {
+    'home': 'home.html',
+    'publish': 'add-post.html',
+    'login': 'login.html',
+    'register': 'register.html',
+    'profile': 'profile.html'
+};
+
 // اختبار اتصال Supabase
 async function testConnection() {
     const connectionStatus = document.getElementById('connection-status');
@@ -40,35 +49,81 @@ async function testConnection() {
     }
 }
 
-// تحميل محتوى صفحة النشر من ملف منفصل
-async function loadPublishPage() {
+// تحميل محتوى الصفحة من ملف منفصل
+async function loadPageContent(pageId) {
+    if (!pageFiles[pageId]) {
+        console.error('الصفحة غير معروفة:', pageId);
+        return false;
+    }
+
     try {
-        const response = await fetch('add-post.html');
+        const response = await fetch(pageFiles[pageId]);
         if (!response.ok) {
-            throw new Error('فشل في تحميل صفحة النشر');
+            throw new Error(`فشل في تحميل صفحة ${pageId}`);
         }
         const html = await response.text();
         
         // إضافة المحتوى إلى منطقة المحتوى الديناميكي
         document.getElementById('dynamic-content').innerHTML = html;
         
-        // بعد تحميل المحتوى، نقوم بربط الأحداث
-        bindPublishFormEvents();
+        // بعد تحميل المحتوى، نقوم بربط الأحداث الخاصة بالصفحة
+        bindPageEvents(pageId);
         
-        // التحقق من حالة تسجيل الدخول
-        if (!currentUser) {
-            document.getElementById('publish-content').style.display = 'none';
-            document.getElementById('login-required-publish').style.display = 'block';
-        } else {
-            document.getElementById('publish-content').style.display = 'block';
-            document.getElementById('login-required-publish').style.display = 'none';
-        }
+        // معالجة خاصة لكل صفحة
+        handlePageSpecificLogic(pageId);
         
         return true;
     } catch (error) {
-        console.error('Error loading publish page:', error);
-        document.getElementById('dynamic-content').innerHTML = '<p>خطأ في تحميل صفحة النشر</p>';
+        console.error(`Error loading ${pageId} page:`, error);
+        document.getElementById('dynamic-content').innerHTML = `<p>خطأ في تحميل الصفحة: ${error.message}</p>`;
         return false;
+    }
+}
+
+// ربط أحداث الصفحة بعد تحميلها
+function bindPageEvents(pageId) {
+    switch (pageId) {
+        case 'publish':
+            bindPublishFormEvents();
+            break;
+        case 'login':
+            bindLoginFormEvents();
+            break;
+        case 'register':
+            bindRegisterFormEvents();
+            break;
+        case 'profile':
+            // لا تحتاج صفحة الملف الشخصي إلى ربط أحداث خاصة
+            break;
+        case 'home':
+            // تحميل المنشورات للصفحة الرئيسية
+            loadPosts();
+            break;
+    }
+}
+
+// معالجة خاصة لكل صفحة
+function handlePageSpecificLogic(pageId) {
+    switch (pageId) {
+        case 'publish':
+            if (!currentUser) {
+                document.getElementById('publish-content').style.display = 'none';
+                document.getElementById('login-required-publish').style.display = 'block';
+            } else {
+                document.getElementById('publish-content').style.display = 'block';
+                document.getElementById('login-required-publish').style.display = 'none';
+            }
+            break;
+        case 'profile':
+            if (!currentUser) {
+                document.getElementById('profile-content').style.display = 'none';
+                document.getElementById('login-required-profile').style.display = 'block';
+            } else {
+                document.getElementById('profile-content').style.display = 'block';
+                document.getElementById('login-required-profile').style.display = 'none';
+                loadProfileData();
+            }
+            break;
     }
 }
 
@@ -77,10 +132,10 @@ function bindPublishFormEvents() {
     const publishForm = document.getElementById('publish-form');
     if (publishForm) {
         // إزالة أي مستمعين سابقين لتجنب التكرار
-        publishForm.replaceWith(publishForm.cloneNode(true));
-        const newPublishForm = document.getElementById('publish-form');
+        const newPublishForm = publishForm.cloneNode(true);
+        publishForm.parentNode.replaceChild(newPublishForm, publishForm);
         
-        newPublishForm.addEventListener('submit', async (e) => {
+        document.getElementById('publish-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (!currentUser) {
@@ -160,49 +215,120 @@ function bindPublishFormEvents() {
     }
 }
 
+// ربط أحداث نموذج تسجيل الدخول
+function bindLoginFormEvents() {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        const newLoginForm = loginForm.cloneNode(true);
+        loginForm.parentNode.replaceChild(newLoginForm, loginForm);
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                updateUIForAuth();
+                showPage('home');
+            } catch (error) {
+                console.error('Error signing in:', error.message);
+                const statusEl = document.getElementById('login-status');
+                if (statusEl) {
+                    statusEl.textContent = `فشل تسجيل الدخول: ${error.message}`;
+                    statusEl.className = 'upload-status error';
+                    statusEl.style.display = 'block';
+                }
+            }
+        });
+    }
+}
+
+// ربط أحداث نموذج إنشاء حساب
+function bindRegisterFormEvents() {
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        const newRegisterForm = registerForm.cloneNode(true);
+        registerForm.parentNode.replaceChild(newRegisterForm, registerForm);
+        
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const phone = document.getElementById('register-phone').value;
+            const address = document.getElementById('register-address').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            
+            // التحقق من تطابق كلمة المرور
+            if (password !== confirmPassword) {
+                const statusEl = document.getElementById('register-status');
+                if (statusEl) {
+                    statusEl.textContent = 'كلمة المرور غير متطابقة';
+                    statusEl.className = 'upload-status error';
+                    statusEl.style.display = 'block';
+                }
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: phone,
+                            address: address
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                const statusEl = document.getElementById('register-status');
+                if (statusEl) {
+                    statusEl.textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
+                    statusEl.className = 'upload-status success';
+                    statusEl.style.display = 'block';
+                }
+                
+                // إعادة تعيين النموذج
+                document.getElementById('register-form').reset();
+                
+                // الانتظار قليلاً ثم الانتقال إلى صفحة تسجيل الدخول
+                setTimeout(() => {
+                    showPage('login');
+                }, 2000);
+            } catch (error) {
+                console.error('Error signing up:', error.message);
+                const statusEl = document.getElementById('register-status');
+                if (statusEl) {
+                    statusEl.textContent = `فشل في إنشاء الحساب: ${error.message}`;
+                    statusEl.className = 'upload-status error';
+                    statusEl.style.display = 'block';
+                }
+            }
+        });
+    }
+}
+
 // وظائف التنقل بين الصفحات
 function showPage(pageId) {
-    // إخفاء جميع الصفحات
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    
     // مسح المحتوى الديناميكي
     document.getElementById('dynamic-content').innerHTML = '';
     
-    if (pageId === 'publish') {
-        // تحميل صفحة النشر ديناميكيًا
-        loadPublishPage().then(() => {
-            // بعد تحميل المحتوى، إظهاره
-            const publishPage = document.getElementById('publish-page');
-            if (publishPage) {
-                publishPage.style.display = 'block';
-            }
-        });
-    } else {
-        // إظهار الصفحة المطلوبة
-        const targetPage = document.getElementById(`${pageId}-page`);
-        if (targetPage) {
-            targetPage.classList.add('active');
-        }
-        
-        // إذا كانت صفحة الملف الشخصي وتحقق من حالة تسجيل الدخول
-        if (pageId === 'profile') {
-            if (!currentUser) {
-                document.getElementById('profile-content').style.display = 'none';
-                document.getElementById('login-required-profile').style.display = 'block';
-            } else {
-                document.getElementById('profile-content').style.display = 'block';
-                document.getElementById('login-required-profile').style.display = 'none';
-                loadProfileData();
-            }
-        }
-        
-        // إذا كانت الصفحة الرئيسية، تحميل المنشورات
-        if (pageId === 'home') {
-            loadPosts();
-        }
-    }
+    // تحميل الصفحة المطلوبة
+    loadPageContent(pageId);
     
     return false;
 }
@@ -290,8 +416,11 @@ async function checkAuth() {
         }
     } catch (error) {
         console.error('Error checking auth:', error.message);
-        document.getElementById('connection-status').textContent = `خطأ في المصادقة: ${error.message}`;
-        document.getElementById('connection-status').className = 'connection-status connection-error';
+        const connectionStatus = document.getElementById('connection-status');
+        if (connectionStatus) {
+            connectionStatus.textContent = `خطأ في المصادقة: ${error.message}`;
+            connectionStatus.className = 'connection-status connection-error';
+        }
     }
 }
 
@@ -300,12 +429,15 @@ supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
         currentUser = session.user;
         updateUIForAuth();
-        document.getElementById('connection-status').textContent = 'تم تسجيل الدخول بنجاح';
-        document.getElementById('connection-status').className = 'connection-status connection-success';
-        
-        setTimeout(() => {
-            document.getElementById('connection-status').style.display = 'none';
-        }, 3000);
+        const connectionStatus = document.getElementById('connection-status');
+        if (connectionStatus) {
+            connectionStatus.textContent = 'تم تسجيل الدخول بنجاح';
+            connectionStatus.className = 'connection-status connection-success';
+            
+            setTimeout(() => {
+                connectionStatus.style.display = 'none';
+            }, 3000);
+        }
     } else if (event === 'SIGNED_OUT') {
         currentUser = null;
         updateUIForAuth();
@@ -320,87 +452,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ثم التحقق من المصادقة
     await checkAuth();
     
-    // ثم تحميل المنشورات
-    loadPosts();
-    
-    // إعداد نموذج تسجيل الدخول
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-            
-            if (error) throw error;
-            
-            currentUser = data.user;
-            updateUIForAuth();
-            showPage('home');
-        } catch (error) {
-            console.error('Error signing in:', error.message);
-            document.getElementById('login-status').textContent = `فشل تسجيل الدخول: ${error.message}`;
-            document.getElementById('login-status').className = 'upload-status error';
-            document.getElementById('login-status').style.display = 'block';
-        }
-    });
-    
-    // إعداد نموذج إنشاء حساب
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const name = document.getElementById('register-name').value;
-        const phone = document.getElementById('register-phone').value;
-        const address = document.getElementById('register-address').value;
-        const email = document.getElementById('register-email').value;
-        const password = document.getElementById('register-password').value;
-        const confirmPassword = document.getElementById('register-confirm-password').value;
-        
-        // التحقق من تطابق كلمة المرور
-        if (password !== confirmPassword) {
-            document.getElementById('register-status').textContent = 'كلمة المرور غير متطابقة';
-            document.getElementById('register-status').className = 'upload-status error';
-            document.getElementById('register-status').style.display = 'block';
-            return;
-        }
-        
-        try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: name,
-                        phone: phone,
-                        address: address
-                    }
-                }
-            });
-            
-            if (error) throw error;
-            
-            document.getElementById('register-status').textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
-            document.getElementById('register-status').className = 'upload-status success';
-            document.getElementById('register-status').style.display = 'block';
-            
-            // إعادة تعيين النموذج
-            document.getElementById('register-form').reset();
-            
-            // الانتظار قليلاً ثم الانتقال إلى صفحة تسجيل الدخول
-            setTimeout(() => {
-                showPage('login');
-            }, 2000);
-        } catch (error) {
-            console.error('Error signing up:', error.message);
-            document.getElementById('register-status').textContent = `فشل في إنشاء الحساب: ${error.message}`;
-            document.getElementById('register-status').className = 'upload-status error';
-            document.getElementById('register-status').style.display = 'block';
-        }
-    });
+    // تحميل الصفحة الرئيسية عند البدء
+    showPage('home');
 });
 
 // عرض حالة الرفع
@@ -424,8 +477,11 @@ async function loadPosts() {
         
         if (error) {
             console.error('Error loading posts:', error);
-            document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
-            document.getElementById('connection-status').className = 'connection-status connection-error';
+            const connectionStatus = document.getElementById('connection-status');
+            if (connectionStatus) {
+                connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+                connectionStatus.className = 'connection-status connection-error';
+            }
             
             if (debugMode) {
                 const debugEl = document.getElementById('debug-info');
@@ -439,8 +495,11 @@ async function loadPosts() {
         displayPosts(posts);
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
-        document.getElementById('connection-status').className = 'connection-status connection-error';
+        const connectionStatus = document.getElementById('connection-status');
+        if (connectionStatus) {
+            connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+            connectionStatus.className = 'connection-status connection-error';
+        }
         
         if (debugMode) {
             const debugEl = document.getElementById('debug-info');
@@ -575,4 +634,4 @@ async function addPost(name, description, location, category, price, imageUrl) {
         }
         throw error;
     }
-        }
+    }
