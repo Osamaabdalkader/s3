@@ -32,112 +32,10 @@
     <main class="container">
         <div id="connection-status" class="connection-status"></div>
         
-        <!-- الصفحة الرئيسية -->
-        <section id="home-page" class="page active">
-            <h1 class="section-title">المنشورات الأخيرة</h1>
-            <div id="posts-container" class="posts-grid">
-                <!-- سيتم ملء المنشورات هنا بواسطة JavaScript -->
-            </div>
-        </section>
-
-        <!-- صفحة تسجيل الدخول -->
-        <section id="login-page" class="page">
-            <div class="auth-form">
-                <h1 class="section-title">تسجيل الدخول</h1>
-                <div id="login-status" class="upload-status"></div>
-                <form id="login-form">
-                    <div class="form-group form-icon">
-                        <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني:</label>
-                        <input type="email" id="login-email" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="password"><i class="fas fa-lock"></i> كلمة المرور:</label>
-                        <input type="password" id="login-password" required>
-                    </div>
-                    <button type="submit"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
-                </form>
-                <p style="margin-top: 20px; text-align: center;">
-                    لا تملك حساباً؟ <a href="#" onclick="showPage('register')">إنشاء حساب جديد</a>
-                </p>
-            </div>
-        </section>
-
-        <!-- صفحة إنشاء حساب -->
-        <section id="register-page" class="page">
-            <div class="auth-form">
-                <h1 class="section-title">إنشاء حساب جديد</h1>
-                <div id="register-status" class="upload-status"></div>
-                <form id="register-form">
-                    <div class="form-group form-icon">
-                        <label for="name"><i class="fas fa-user"></i> الاسم:</label>
-                        <input type="text" id="register-name" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="phone"><i class="fas fa-phone"></i> رقم الهاتف:</label>
-                        <input type="tel" id="register-phone" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="address"><i class="fas fa-map-marker-alt"></i> العنوان:</label>
-                        <input type="text" id="register-address" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني:</label>
-                        <input type="email" id="register-email" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="password"><i class="fas fa-lock"></i> كلمة المرور:</label>
-                        <input type="password" id="register-password" required>
-                    </div>
-                    <div class="form-group form-icon">
-                        <label for="confirm-password"><i class="fas fa-lock"></i> تأكيد كلمة المرور:</label>
-                        <input type="password" id="register-confirm-password" required>
-                    </div>
-                    <button type="submit"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
-                </form>
-                <p style="margin-top: 20px; text-align: center;">
-                    لديك حساب بالفعل؟ <a href="#" onclick="showPage('login')">تسجيل الدخول</a>
-                </p>
-            </div>
-        </section>
-
-        <!-- صفحة حسابي -->
-        <section id="profile-page" class="page">
-            <h1 class="section-title">حسابي</h1>
-            <div id="profile-content">
-                <div class="profile-card">
-                    <div class="profile-info">
-                        <div class="profile-label"><i class="fas fa-user"></i> الاسم:</div>
-                        <div id="profile-name"></div>
-                    </div>
-                    <div class="profile-info">
-                        <div class="profile-label"><i class="fas fa-envelope"></i> البريد الإلكتروني:</div>
-                        <div id="profile-email"></div>
-                    </div>
-                    <div class="profile-info">
-                        <div class="profile-label"><i class="fas fa-phone"></i> رقم الهاتف:</div>
-                        <div id="profile-phone"></div>
-                    </div>
-                    <div class="profile-info">
-                        <div class="profile-label"><i class="fas fa-map-marker-alt"></i> العنوان:</div>
-                        <div id="profile-address"></div>
-                    </div>
-                    <div class="profile-info">
-                        <div class="profile-label"><i class="fas fa-calendar-alt"></i> تاريخ إنشاء الحساب:</div>
-                        <div id="profile-created"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="login-required-profile" class="login-required" style="display: none;">
-                <h2>يجب تسجيل الدخول لعرض الملف الشخصي</h2>
-                <p>يجب أن تكون مسجلاً في الموقع لعرض معلومات حسابك.</p>
-                <button onclick="showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
-                <button onclick="showPage('register')" class="btn-secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
-            </div>
-        </section>
-        
         <!-- منطقة المحتوى الديناميكي -->
-        <div id="dynamic-content"></div>
+        <div id="dynamic-content">
+            <!-- سيتم تحميل المحتوى هنا ديناميكياً -->
+        </div>
     </main>
 
     <footer>
@@ -154,4 +52,4 @@
 
     <script src="app.js"></script>
 </body>
-                                                                                                                                     </html>
+                                                                                                                      </html>
