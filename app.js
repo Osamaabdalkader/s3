@@ -51,15 +51,18 @@ async function testConnection() {
 
 // تحميل محتوى الصفحة من ملف منفصل
 async function loadPageContent(pageId) {
+    console.log(`جاري تحميل الصفحة: ${pageId}`);
+    
     if (!pageFiles[pageId]) {
         console.error('الصفحة غير معروفة:', pageId);
+        document.getElementById('dynamic-content').innerHTML = `<p>الصفحة غير موجودة: ${pageId}</p>`;
         return false;
     }
 
     try {
         const response = await fetch(pageFiles[pageId]);
         if (!response.ok) {
-            throw new Error(`فشل في تحميل صفحة ${pageId}`);
+            throw new Error(`فشل في تحميل صفحة ${pageId}: ${response.status}`);
         }
         const html = await response.text();
         
@@ -72,16 +75,25 @@ async function loadPageContent(pageId) {
         // معالجة خاصة لكل صفحة
         handlePageSpecificLogic(pageId);
         
+        console.log(`تم تحميل الصفحة بنجاح: ${pageId}`);
         return true;
     } catch (error) {
-        console.error(`Error loading ${pageId} page:`, error);
-        document.getElementById('dynamic-content').innerHTML = `<p>خطأ في تحميل الصفحة: ${error.message}</p>`;
+        console.error(`خطأ في تحميل صفحة ${pageId}:`, error);
+        document.getElementById('dynamic-content').innerHTML = `
+            <div class="page">
+                <h1 class="section-title">خطأ في تحميل الصفحة</h1>
+                <p>تعذر تحميل الصفحة المطلوبة: ${error.message}</p>
+                <button onclick="showPage('home')">العودة إلى الرئيسية</button>
+            </div>
+        `;
         return false;
     }
 }
 
 // ربط أحداث الصفحة بعد تحميلها
 function bindPageEvents(pageId) {
+    console.log(`جاري ربط أحداث الصفحة: ${pageId}`);
+    
     switch (pageId) {
         case 'publish':
             bindPublishFormEvents();
@@ -104,24 +116,42 @@ function bindPageEvents(pageId) {
 
 // معالجة خاصة لكل صفحة
 function handlePageSpecificLogic(pageId) {
+    console.log(`جاري معالجة الصفحة: ${pageId}`);
+    
     switch (pageId) {
         case 'publish':
             if (!currentUser) {
-                document.getElementById('publish-content').style.display = 'none';
-                document.getElementById('login-required-publish').style.display = 'block';
+                const publishContent = document.getElementById('publish-content');
+                const loginRequired = document.getElementById('login-required-publish');
+                if (publishContent && loginRequired) {
+                    publishContent.style.display = 'none';
+                    loginRequired.style.display = 'block';
+                }
             } else {
-                document.getElementById('publish-content').style.display = 'block';
-                document.getElementById('login-required-publish').style.display = 'none';
+                const publishContent = document.getElementById('publish-content');
+                const loginRequired = document.getElementById('login-required-publish');
+                if (publishContent && loginRequired) {
+                    publishContent.style.display = 'block';
+                    loginRequired.style.display = 'none';
+                }
             }
             break;
         case 'profile':
             if (!currentUser) {
-                document.getElementById('profile-content').style.display = 'none';
-                document.getElementById('login-required-profile').style.display = 'block';
+                const profileContent = document.getElementById('profile-content');
+                const loginRequired = document.getElementById('login-required-profile');
+                if (profileContent && loginRequired) {
+                    profileContent.style.display = 'none';
+                    loginRequired.style.display = 'block';
+                }
             } else {
-                document.getElementById('profile-content').style.display = 'block';
-                document.getElementById('login-required-profile').style.display = 'none';
-                loadProfileData();
+                const profileContent = document.getElementById('profile-content');
+                const loginRequired = document.getElementById('login-required-profile');
+                if (profileContent && loginRequired) {
+                    profileContent.style.display = 'block';
+                    loginRequired.style.display = 'none';
+                    loadProfileData();
+                }
             }
             break;
     }
@@ -131,12 +161,18 @@ function handlePageSpecificLogic(pageId) {
 function bindPublishFormEvents() {
     const publishForm = document.getElementById('publish-form');
     if (publishForm) {
-        // إزالة أي مستمعين سابقين لتجنب التكرار
-        const newPublishForm = publishForm.cloneNode(true);
-        publishForm.parentNode.replaceChild(newPublishForm, publishForm);
+        console.log('تم العثور على نموذج النشر، جاري ربط الأحداث');
         
-        document.getElementById('publish-form').addEventListener('submit', async (e) => {
+        // إزالة أي مستمعين سابقين
+        const newForm = publishForm.cloneNode(true);
+        publishForm.parentNode.replaceChild(newForm, publishForm);
+        
+        // إعادة الحصول على النموذج بعد الاستبدال
+        const freshForm = document.getElementById('publish-form');
+        
+        freshForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('تم تقديم نموذج النشر');
             
             if (!currentUser) {
                 showStatus('يجب تسجيل الدخول لنشر منشور', 'error');
@@ -212,6 +248,8 @@ function bindPublishFormEvents() {
                 }
             }
         });
+    } else {
+        console.error('لم يتم العثور على نموذج النشر');
     }
 }
 
@@ -219,11 +257,18 @@ function bindPublishFormEvents() {
 function bindLoginFormEvents() {
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        const newLoginForm = loginForm.cloneNode(true);
-        loginForm.parentNode.replaceChild(newLoginForm, loginForm);
+        console.log('تم العثور على نموذج تسجيل الدخول، جاري ربط الأحداث');
         
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        // إزالة أي مستمعين سابقين
+        const newForm = loginForm.cloneNode(true);
+        loginForm.parentNode.replaceChild(newForm, loginForm);
+        
+        // إعادة الحصول على النموذج بعد الاستبدال
+        const freshForm = document.getElementById('login-form');
+        
+        freshForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('تم تقديم نموذج تسجيل الدخول');
             
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
@@ -249,6 +294,8 @@ function bindLoginFormEvents() {
                 }
             }
         });
+    } else {
+        console.error('لم يتم العثور على نموذج تسجيل الدخول');
     }
 }
 
@@ -256,11 +303,18 @@ function bindLoginFormEvents() {
 function bindRegisterFormEvents() {
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
-        const newRegisterForm = registerForm.cloneNode(true);
-        registerForm.parentNode.replaceChild(newRegisterForm, registerForm);
+        console.log('تم العثور على نموذج إنشاء حساب، جاري ربط الأحداث');
         
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
+        // إزالة أي مستمعين سابقين
+        const newForm = registerForm.cloneNode(true);
+        registerForm.parentNode.replaceChild(newForm, registerForm);
+        
+        // إعادة الحصول على النموذج بعد الاستبدال
+        const freshForm = document.getElementById('register-form');
+        
+        freshForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('تم تقديم نموذج إنشاء حساب');
             
             const name = document.getElementById('register-name').value;
             const phone = document.getElementById('register-phone').value;
@@ -319,13 +373,17 @@ function bindRegisterFormEvents() {
                 }
             }
         });
+    } else {
+        console.error('لم يتم العثور على نموذج إنشاء حساب');
     }
 }
 
 // وظائف التنقل بين الصفحات
 function showPage(pageId) {
+    console.log(`جاري تحميل الصفحة: ${pageId}`);
+    
     // مسح المحتوى الديناميكي
-    document.getElementById('dynamic-content').innerHTML = '';
+    document.getElementById('dynamic-content').innerHTML = '<div class="loading">جاري التحميل...</div>';
     
     // تحميل الصفحة المطلوبة
     loadPageContent(pageId);
@@ -364,28 +422,40 @@ function loadDebugInfo() {
 // تحميل بيانات الملف الشخصي
 function loadProfileData() {
     if (currentUser) {
-        document.getElementById('profile-name').textContent = currentUser.user_metadata.full_name || 'غير محدد';
-        document.getElementById('profile-email').textContent = currentUser.email;
-        document.getElementById('profile-phone').textContent = currentUser.user_metadata.phone || 'غير محدد';
-        document.getElementById('profile-address').textContent = currentUser.user_metadata.address || 'غير محدد';
-        document.getElementById('profile-created').textContent = new Date(currentUser.created_at).toLocaleString('ar-SA');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        const profilePhone = document.getElementById('profile-phone');
+        const profileAddress = document.getElementById('profile-address');
+        const profileCreated = document.getElementById('profile-created');
+        
+        if (profileName) profileName.textContent = currentUser.user_metadata.full_name || 'غير محدد';
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (profilePhone) profilePhone.textContent = currentUser.user_metadata.phone || 'غير محدد';
+        if (profileAddress) profileAddress.textContent = currentUser.user_metadata.address || 'غير محدد';
+        if (profileCreated) profileCreated.textContent = new Date(currentUser.created_at).toLocaleString('ar-SA');
     }
 }
 
 // تحديث واجهة المستخدم بناءً على حالة تسجيل الدخول
 function updateUIForAuth() {
+    const publishLink = document.getElementById('publish-link');
+    const profileLink = document.getElementById('profile-link');
+    const logoutLink = document.getElementById('logout-link');
+    const loginLink = document.getElementById('login-link');
+    const registerLink = document.getElementById('register-link');
+    
     if (currentUser) {
-        document.getElementById('publish-link').style.display = 'list-item';
-        document.getElementById('profile-link').style.display = 'list-item';
-        document.getElementById('logout-link').style.display = 'list-item';
-        document.getElementById('login-link').style.display = 'none';
-        document.getElementById('register-link').style.display = 'none';
+        if (publishLink) publishLink.style.display = 'list-item';
+        if (profileLink) profileLink.style.display = 'list-item';
+        if (logoutLink) logoutLink.style.display = 'list-item';
+        if (loginLink) loginLink.style.display = 'none';
+        if (registerLink) registerLink.style.display = 'none';
     } else {
-        document.getElementById('publish-link').style.display = 'none';
-        document.getElementById('profile-link').style.display = 'none';
-        document.getElementById('logout-link').style.display = 'none';
-        document.getElementById('login-link').style.display = 'list-item';
-        document.getElementById('register-link').style.display = 'list-item';
+        if (publishLink) publishLink.style.display = 'none';
+        if (profileLink) profileLink.style.display = 'none';
+        if (logoutLink) logoutLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'list-item';
+        if (registerLink) registerLink.style.display = 'list-item';
     }
 }
 
@@ -446,6 +516,8 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 // تحميل المنشورات عند فتح الصفحة
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('تم تحميل الصفحة، جاري التهيئة');
+    
     // اختبار الاتصال أولاً
     await testConnection();
     
@@ -513,7 +585,10 @@ async function loadPosts() {
 // عرض المنشورات في الصفحة الرئيسية
 function displayPosts(posts) {
     const postsContainer = document.getElementById('posts-container');
-    if (!postsContainer) return;
+    if (!postsContainer) {
+        console.error('لم يتم العثور على حاوية المنشورات');
+        return;
+    }
     
     postsContainer.innerHTML = '';
     
@@ -634,4 +709,4 @@ async function addPost(name, description, location, category, price, imageUrl) {
         }
         throw error;
     }
-    }
+}
