@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- إضافة base href لحل مشكلة المسارات على GitHub Pages -->
     <base href="./">
 </head>
 <body>
@@ -19,13 +18,13 @@
                     منصة تسريع الإلكترونية
                 </div>
                 <ul class="nav-links">
-                    <li><a href="#" onclick="showPage('home')"><i class="fas fa-home"></i> الرئيسية</a></li>
-                    <li id="publish-link" style="display: none;"><a href="#" onclick="showPage('publish')"><i class="fas fa-plus-circle"></i> نشر منشور</a></li>
-                    <li id="profile-link" style="display: none;"><a href="#" onclick="showPage('profile')"><i class="fas fa-user"></i> حسابي</a></li>
-                    <li id="login-link"><a href="#" onclick="showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a></li>
-                    <li id="register-link"><a href="#" onclick="showPage('register')"><i class="fas fa-user-plus"></i> إنشاء حساب</a></li>
-                    <li id="logout-link" style="display: none;"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
-                    <li><a href="#" onclick="toggleDebug()"><i class="fas fa-bug"></i> تصحيح الأخطاء</a></li>
+                    <li><a href="#" onclick="Navigation.showPage('home')"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li id="publish-link" style="display: none;"><a href="#" onclick="Navigation.showPage('publish')"><i class="fas fa-plus-circle"></i> نشر منشور</a></li>
+                    <li id="profile-link" style="display: none;"><a href="#" onclick="Navigation.showPage('profile')"><i class="fas fa-user"></i> حسابي</a></li>
+                    <li id="login-link"><a href="#" onclick="Navigation.showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a></li>
+                    <li id="register-link"><a href="#" onclick="Navigation.showPage('register')"><i class="fas fa-user-plus"></i> إنشاء حساب</a></li>
+                    <li id="logout-link" style="display: none;"><a href="#" onclick="Auth.logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                    <li><a href="#" onclick="App.toggleDebug()"><i class="fas fa-bug"></i> تصحيح الأخطاء</a></li>
                 </ul>
             </nav>
         </div>
@@ -33,9 +32,7 @@
 
     <main class="container">
         <div id="connection-status" class="connection-status"></div>
-        
-        <!-- منطقة المحتوى الديناميكي مع event delegation -->
-        <div id="dynamic-content" onclick="handleDynamicContentClick(event)"></div>
+        <div id="dynamic-content"></div>
     </main>
 
     <footer>
@@ -50,6 +47,12 @@
         </div>
     </footer>
 
-    <script src="app.js"></script>
+    <!-- تحميل ملفات JavaScript بالترتيب -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/posts.js"></script>
+    <script src="js/app.js"></script>
 </body>
-    </html>
+</html>
