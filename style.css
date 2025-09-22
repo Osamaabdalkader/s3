@@ -17,6 +17,14 @@
     --hover-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
+.loading {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: var(--primary-color);
+} 
+
+
 * {
     box-sizing: border-box;
     margin: 0;
