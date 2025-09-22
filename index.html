@@ -32,8 +32,182 @@
     <main class="container">
         <div id="connection-status" class="connection-status"></div>
         
-        <!-- منطقة المحتوى الديناميكي -->
-        <div id="dynamic-content"></div>
+        <!-- جميع الصفحات في ملف واحد -->
+        
+        <!-- الصفحة الرئيسية -->
+        <section id="home-page" class="page active">
+            <h1 class="section-title">المنشورات الأخيرة</h1>
+            <div id="posts-container" class="posts-grid">
+                <!-- سيتم ملء المنشورات هنا بواسطة JavaScript -->
+            </div>
+        </section>
+
+        <!-- صفحة النشر -->
+        <section id="publish-page" class="page">
+            <h1 class="section-title">نشر منشور جديد</h1>
+            <div id="publish-content">
+                <div id="upload-status" class="upload-status"></div>
+                <form id="publish-form">
+                    <div class="form-group form-icon">
+                        <label for="name"><i class="fas fa-heading"></i> اسم المنشور:</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="description"><i class="fas fa-align-left"></i> الوصف:</label>
+                        <textarea id="description" required></textarea>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="location"><i class="fas fa-map-marker-alt"></i> الموقع:</label>
+                        <select id="location" required>
+                            <option value="">اختر الموقع</option>
+                            <option value="صنعاء">صنعاء</option>
+                            <option value="عدن">عدن</option>
+                            <option value="تعز">تعز</option>
+                            <option value="مارب">مارب</option>
+                            <option value="حضرموت">حضرموت</option>
+                            <option value="الحديدة">الحديدة</option>
+                            <option value="إب">إب</option>
+                            <option value="ذمار">ذمار</option>
+                            <option value="المكلا">المكلا</option>
+                            <option value="عمران">عمران</option>
+                            <option value="الضالع">الضالع</option>
+                            <option value="لحج">لحج</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="category"><i class="fas fa-tag"></i> النوع:</label>
+                        <select id="category" required>
+                            <option value="">اختر النوع</option>
+                            <option value="أدوية">أدوية</option>
+                            <option value="أثاث">أثاث</option>
+                            <option value="ملابس">ملابس</option>
+                            <option value="عقارات">عقارات</option>
+                            <option value="إلكترونيات">إلكترونيات</option>
+                            <option value="سيارات">سيارات</option>
+                            <option value="أغذية">أغذية</option>
+                            <option value="خدمات">خدمات</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="price"><i class="fas fa-money-bill-wave"></i> السعر (ريال يمني):</label>
+                        <input type="number" id="price" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="image"><i class="fas fa-image"></i> صورة (اختياري):</label>
+                        <input type="file" id="image" accept="image/*">
+                        <small>يمكنك رفع صورة لتعزيز منشورك (الحجم الأقصى: 5MB)</small>
+                    </div>
+                    <button type="submit"><i class="fas fa-paper-plane"></i> نشر</button>
+                </form>
+            </div>
+            
+            <div id="login-required-publish" class="login-required" style="display: none;">
+                <h2>يجب تسجيل الدخول لنشر منشور</h2>
+                <p>يجب أن تكون مسجلاً في الموقع لنشر منشور جديد.</p>
+                <button onclick="showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+                <button onclick="showPage('register')" class="btn-secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+            </div>
+            
+            <div id="debug-info" class="debug-info"></div>
+        </section>
+
+        <!-- صفحة تسجيل الدخول -->
+        <section id="login-page" class="page">
+            <div class="auth-form">
+                <h1 class="section-title">تسجيل الدخول</h1>
+                <div id="login-status" class="upload-status"></div>
+                <form id="login-form">
+                    <div class="form-group form-icon">
+                        <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني:</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="password"><i class="fas fa-lock"></i> كلمة المرور:</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+                </form>
+                <p style="margin-top: 20px; text-align: center;">
+                    لا تملك حساباً؟ <a href="#" onclick="showPage('register')">إنشاء حساب جديد</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- صفحة إنشاء حساب -->
+        <section id="register-page" class="page">
+            <div class="auth-form">
+                <h1 class="section-title">إنشاء حساب جديد</h1>
+                <div id="register-status" class="upload-status"></div>
+                <form id="register-form">
+                    <div class="form-group form-icon">
+                        <label for="name"><i class="fas fa-user"></i> الاسم:</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="phone"><i class="fas fa-phone"></i> رقم الهاتف:</label>
+                        <input type="tel" id="register-phone" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="address"><i class="fas fa-map-marker-alt"></i> العنوان:</label>
+                        <input type="text" id="register-address" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني:</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="password"><i class="fas fa-lock"></i> كلمة المرور:</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <div class="form-group form-icon">
+                        <label for="confirm-password"><i class="fas fa-lock"></i> تأكيد كلمة المرور:</label>
+                        <input type="password" id="register-confirm-password" required>
+                    </div>
+                    <button type="submit"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+                </form>
+                <p style="margin-top: 20px; text-align: center;">
+                    لديك حساب بالفعل؟ <a href="#" onclick="showPage('login')">تسجيل الدخول</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- صفحة حسابي -->
+        <section id="profile-page" class="page">
+            <h1 class="section-title">حسابي</h1>
+            <div id="profile-content">
+                <div class="profile-card">
+                    <div class="profile-info">
+                        <div class="profile-label"><i class="fas fa-user"></i> الاسم:</div>
+                        <div id="profile-name"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-label"><i class="fas fa-envelope"></i> البريد الإلكتروني:</div>
+                        <div id="profile-email"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-label"><i class="fas fa-phone"></i> رقم الهاتف:</div>
+                        <div id="profile-phone"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-label"><i class="fas fa-map-marker-alt"></i> العنوان:</div>
+                        <div id="profile-address"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-label"><i class="fas fa-calendar-alt"></i> تاريخ إنشاء الحساب:</div>
+                        <div id="profile-created"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="login-required-profile" class="login-required" style="display: none;">
+                <h2>يجب تسجيل الدخول لعرض الملف الشخصي</h2>
+                <p>يجب أن تكون مسجلاً في الموقع لعرض معلومات حسابك.</p>
+                <button onclick="showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+                <button onclick="showPage('register')" class="btn-secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+            </div>
+        </section>
     </main>
 
     <footer>
@@ -50,4 +224,4 @@
 
     <script src="app.js"></script>
 </body>
-                    </html>
+    </html>
