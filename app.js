@@ -6,10 +6,10 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let debugMode = false;
 let currentUser = null;
 
-// خريطة الصفحات وملفاتها
+// خريطة الصفحات وملفاتها مع مسارات GitHub Pages
 const pageFiles = {
     'home': 'home.html',
-    'publish': 'add-post.html',
+    'publish': 'add-post.html', 
     'login': 'login.html',
     'register': 'register.html',
     'profile': 'profile.html'
@@ -41,60 +41,124 @@ async function testConnection() {
     }
 }
 
-// تحميل محتوى الصفحة من ملف منفصل
-async function loadPageContent(pageId) {
-    console.log(`جاري تحميل الصفحة: ${pageId}`);
-    
-    if (!pageFiles[pageId]) {
-        console.error('الصفحة غير معروفة:', pageId);
-        document.getElementById('dynamic-content').innerHTML = `<p>الصفحة غير موجودة: ${pageId}</p>`;
-        return false;
-    }
-
-    try {
-        const response = await fetch(pageFiles[pageId]);
-        if (!response.ok) {
-            throw new Error(`فشل في تحميل صفحة ${pageId}`);
+// تحميل محتوى الصفحة من ملف منفصل (معدل تماماً)
+function loadPageContent(pageId) {
+    return new Promise(async (resolve, reject) => {
+        console.log(`جاري تحميل الصفحة: ${pageId}`);
+        
+        if (!pageFiles[pageId]) {
+            const error = `الصفحة غير معروفة: ${pageId}`;
+            console.error(error);
+            reject(error);
+            return;
         }
-        const html = await response.text();
-        
-        // إضافة المحتوى إلى منطقة المحتوى الديناميكي
-        document.getElementById('dynamic-content').innerHTML = html;
-        
-        // الانتظار قليلاً لضمان تحميل DOM ثم ربط الأحداث
-        setTimeout(() => {
-            bindPageEvents(pageId);
-            handlePageSpecificLogic(pageId);
-        }, 50);
-        
-        return true;
-    } catch (error) {
-        console.error(`Error loading ${pageId} page:`, error);
-        document.getElementById('dynamic-content').innerHTML = `<p>خطأ في تحميل الصفحة: ${error.message}</p>`;
-        return false;
+
+        try {
+            // استخدام XMLHttpRequest بدلاً من fetch لتحسين التوافق
+            const xhr = new XMLHttpRequest();
+            const url = pageFiles[pageId] + '?v=' + Date.now(); // إضافة timestamp لتجنب caching
+            
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const html = xhr.responseText;
+                        document.getElementById('dynamic-content').innerHTML = html;
+                        
+                        // ربط الأحداث بعد التأكد من تحميل DOM
+                        setTimeout(() => {
+                            initializePage(pageId);
+                            resolve(true);
+                        }, 100);
+                    } else {
+                        const error = `فشل في تحميل الصفحة: ${xhr.status} - ${pageFiles[pageId]}`;
+                        console.error(error);
+                        document.getElementById('dynamic-content').innerHTML = `
+                            <div class="page">
+                                <h1 class="section-title">خطأ في تحميل الصفحة</h1>
+                                <p>${error}</p>
+                                <p>مسار الملف: ${url}</p>
+                                <button onclick="showPage('home')">العودة إلى الرئيسية</button>
+                            </div>
+                        `;
+                        reject(error);
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                const error = `خطأ في الشبكة أثناء تحميل: ${pageFiles[pageId]}`;
+                console.error(error);
+                reject(error);
+            };
+            
+            xhr.send();
+        } catch (error) {
+            console.error(`خطأ في تحميل صفحة ${pageId}:`, error);
+            reject(error);
+        }
+    });
+}
+
+// تهيئة الصفحة بعد تحميلها (معدل)
+function initializePage(pageId) {
+    console.log(`جاري تهيئة الصفحة: ${pageId}`);
+    
+    // ربط الأحداث باستخدام event delegation
+    bindPageEventsWithDelegation(pageId);
+    
+    // معالجة خاصة لكل صفحة
+    handlePageSpecificLogic(pageId);
+    
+    // إذا كانت الصفحة الرئيسية، تحميل المنشورات
+    if (pageId === 'home') {
+        loadPosts();
     }
 }
 
-// ربط أحداث الصفحة بعد تحميلها (معدل)
-function bindPageEvents(pageId) {
-    console.log(`جاري ربط أحداث الصفحة: ${pageId}`);
+// ربط الأحداث باستخدام event delegation (الحل الجذري)
+function bindPageEventsWithDelegation(pageId) {
+    console.log(`جاري ربط الأحداث للصفحة: ${pageId} باستخدام delegation`);
     
-    switch (pageId) {
-        case 'publish':
-            bindPublishFormEvents();
+    // لا حاجة لربط أحداث هنا - سيتم التعامل معها عبر handleDynamicContentClick
+}
+
+// معالجة النقر على المحتوى الديناميكي (event delegation)
+function handleDynamicContentClick(event) {
+    const target = event.target;
+    
+    // التعامل مع النقر على الأزرار داخل النماذج
+    if (target.tagName === 'BUTTON' && target.type === 'submit') {
+        event.preventDefault();
+        const form = target.closest('form');
+        if (form) {
+            handleFormSubmit(form.id);
+        }
+    }
+    
+    // التعامل مع النقر على الروابط
+    if (target.tagName === 'A' && target.onclick) {
+        // السماح للروابط بالعمل بشكل طبيعي
+        return true;
+    }
+}
+
+// معالجة تقديم النماذج (مركزي)
+function handleFormSubmit(formId) {
+    console.log(`تم تقديم النموذج: ${formId}`);
+    
+    switch (formId) {
+        case 'publish-form':
+            handlePublishSubmit();
             break;
-        case 'login':
-            bindLoginFormEvents();
+        case 'login-form':
+            handleLoginSubmit();
             break;
-        case 'register':
-            bindRegisterFormEvents();
+        case 'register-form':
+            handleRegisterSubmit();
             break;
-        case 'profile':
-            // لا تحتاج صفحة الملف الشخصي إلى ربط أحداث خاصة
-            break;
-        case 'home':
-            loadPosts();
-            break;
+        default:
+            console.warn(`نموذج غير معروف: ${formId}`);
     }
 }
 
@@ -104,61 +168,50 @@ function handlePageSpecificLogic(pageId) {
     
     switch (pageId) {
         case 'publish':
-            if (!currentUser) {
-                const publishContent = document.getElementById('publish-content');
-                const loginRequired = document.getElementById('login-required-publish');
-                if (publishContent && loginRequired) {
-                    publishContent.style.display = 'none';
-                    loginRequired.style.display = 'block';
-                }
-            } else {
-                const publishContent = document.getElementById('publish-content');
-                const loginRequired = document.getElementById('login-required-publish');
-                if (publishContent && loginRequired) {
-                    publishContent.style.display = 'block';
-                    loginRequired.style.display = 'none';
-                }
-            }
+            updatePublishPageUI();
             break;
         case 'profile':
-            if (!currentUser) {
-                const profileContent = document.getElementById('profile-content');
-                const loginRequired = document.getElementById('login-required-profile');
-                if (profileContent && loginRequired) {
-                    profileContent.style.display = 'none';
-                    loginRequired.style.display = 'block';
-                }
-            } else {
-                const profileContent = document.getElementById('profile-content');
-                const loginRequired = document.getElementById('login-required-profile');
-                if (profileContent && loginRequired) {
-                    profileContent.style.display = 'block';
-                    loginRequired.style.display = 'none';
-                    loadProfileData();
-                }
-            }
+            updateProfilePageUI();
             break;
     }
 }
 
-// ربط أحداث نموذج النشر (معدل)
-function bindPublishFormEvents() {
-    const publishForm = document.getElementById('publish-form');
-    if (publishForm) {
-        console.log('تم العثور على نموذج النشر، جاري ربط الأحداث');
-        
-        // إزالة أي مستمعين سابقين
-        const newForm = publishForm.cloneNode(true);
-        publishForm.parentNode.replaceChild(newForm, publishForm);
-        
-        document.getElementById('publish-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('تم تقديم نموذج النشر');
-            
-            await handlePublishSubmit();
-        });
+// تحديث واجهة صفحة النشر
+function updatePublishPageUI() {
+    if (!currentUser) {
+        const publishContent = document.getElementById('publish-content');
+        const loginRequired = document.getElementById('login-required-publish');
+        if (publishContent && loginRequired) {
+            publishContent.style.display = 'none';
+            loginRequired.style.display = 'block';
+        }
     } else {
-        console.error('لم يتم العثور على نموذج النشر');
+        const publishContent = document.getElementById('publish-content');
+        const loginRequired = document.getElementById('login-required-publish');
+        if (publishContent && loginRequired) {
+            publishContent.style.display = 'block';
+            loginRequired.style.display = 'none';
+        }
+    }
+}
+
+// تحديث واجهة صفحة الملف الشخصي
+function updateProfilePageUI() {
+    if (!currentUser) {
+        const profileContent = document.getElementById('profile-content');
+        const loginRequired = document.getElementById('login-required-profile');
+        if (profileContent && loginRequired) {
+            profileContent.style.display = 'none';
+            loginRequired.style.display = 'block';
+        }
+    } else {
+        const profileContent = document.getElementById('profile-content');
+        const loginRequired = document.getElementById('login-required-profile');
+        if (profileContent && loginRequired) {
+            profileContent.style.display = 'block';
+            loginRequired.style.display = 'none';
+            loadProfileData();
+        }
     }
 }
 
@@ -170,12 +223,17 @@ async function handlePublishSubmit() {
         return;
     }
     
-    const name = document.getElementById('name').value;
-    const description = document.getElementById('description').value;
-    const location = document.getElementById('location').value;
-    const category = document.getElementById('category').value;
-    const price = document.getElementById('price').value;
-    const imageFile = document.getElementById('image').files[0];
+    const name = document.getElementById('name')?.value;
+    const description = document.getElementById('description')?.value;
+    const location = document.getElementById('location')?.value;
+    const category = document.getElementById('category')?.value;
+    const price = document.getElementById('price')?.value;
+    const imageFile = document.getElementById('image')?.files[0];
+    
+    if (!name || !description || !location || !category || !price) {
+        showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
+        return;
+    }
     
     let imageUrl = null;
     
@@ -195,26 +253,20 @@ async function handlePublishSubmit() {
             }
         }
         
-        if (name && description && location && category && price) {
-            showStatus('جاري نشر المنشور...', 'success');
-            const success = await addPost(name, description, location, category, price, imageUrl);
+        showStatus('جاري نشر المنشور...', 'success');
+        const success = await addPost(name, description, location, category, price, imageUrl);
+        
+        if (success) {
+            document.getElementById('publish-form').reset();
+            showStatus('تم نشر المنشور بنجاح!', 'success');
             
-            if (success) {
-                document.getElementById('publish-form').reset();
-                showStatus('تم نشر المنشور بنجاح!', 'success');
-                
-                setTimeout(() => {
-                    const statusEl = document.getElementById('upload-status');
-                    if (statusEl) {
-                        statusEl.style.display = 'none';
-                    }
-                    showPage('home');
-                }, 1500);
-            } else {
-                showStatus('فشل في نشر المنشور', 'error');
-            }
+            setTimeout(() => {
+                const statusEl = document.getElementById('upload-status');
+                if (statusEl) statusEl.style.display = 'none';
+                showPage('home');
+            }, 1500);
         } else {
-            showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
+            showStatus('فشل في نشر المنشور', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -222,37 +274,18 @@ async function handlePublishSubmit() {
     }
 }
 
-// ربط أحداث نموذج تسجيل الدخول (معدل بشكل جذري)
-function bindLoginFormEvents() {
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        console.log('تم العثور على نموذج تسجيل الدخول، جاري ربط الأحداث');
-        
-        // إزالة أي مستمعين سابقين
-        const newForm = loginForm.cloneNode(true);
-        loginForm.parentNode.replaceChild(newForm, loginForm);
-        
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('تم تقديم نموذج تسجيل الدخول');
-            
-            await handleLoginSubmit();
-        });
-    } else {
-        console.error('لم يتم العثور على نموذج تسجيل الدخول');
-    }
-}
-
 // معالجة تقديم نموذج تسجيل الدخول
 async function handleLoginSubmit() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    const email = document.getElementById('login-email')?.value;
+    const password = document.getElementById('login-password')?.value;
+    
+    if (!email || !password) {
+        showLoginStatus('يرجى ملء جميع الحقول', 'error');
+        return;
+    }
     
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         
         if (error) throw error;
         
@@ -261,52 +294,26 @@ async function handleLoginSubmit() {
         showPage('home');
     } catch (error) {
         console.error('Error signing in:', error.message);
-        const statusEl = document.getElementById('login-status');
-        if (statusEl) {
-            statusEl.textContent = `فشل تسجيل الدخول: ${error.message}`;
-            statusEl.className = 'upload-status error';
-            statusEl.style.display = 'block';
-        }
-    }
-}
-
-// ربط أحداث نموذج إنشاء حساب (معدل بشكل جذري)
-function bindRegisterFormEvents() {
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-        console.log('تم العثور على نموذج إنشاء حساب، جاري ربط الأحداث');
-        
-        // إزالة أي مستمعين سابقين
-        const newForm = registerForm.cloneNode(true);
-        registerForm.parentNode.replaceChild(newForm, registerForm);
-        
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('تم تقديم نموذج إنشاء حساب');
-            
-            await handleRegisterSubmit();
-        });
-    } else {
-        console.error('لم يتم العثور على نموذج إنشاء حساب');
+        showLoginStatus(`فشل تسجيل الدخول: ${error.message}`, 'error');
     }
 }
 
 // معالجة تقديم نموذج إنشاء حساب
 async function handleRegisterSubmit() {
-    const name = document.getElementById('register-name').value;
-    const phone = document.getElementById('register-phone').value;
-    const address = document.getElementById('register-address').value;
-    const email = document.getElementById('register-email').value;
-    const password = document.getElementById('register-password').value;
-    const confirmPassword = document.getElementById('register-confirm-password').value;
+    const name = document.getElementById('register-name')?.value;
+    const phone = document.getElementById('register-phone')?.value;
+    const address = document.getElementById('register-address')?.value;
+    const email = document.getElementById('register-email')?.value;
+    const password = document.getElementById('register-password')?.value;
+    const confirmPassword = document.getElementById('register-confirm-password')?.value;
+    
+    if (!name || !phone || !address || !email || !password || !confirmPassword) {
+        showRegisterStatus('يرجى ملء جميع الحقول', 'error');
+        return;
+    }
     
     if (password !== confirmPassword) {
-        const statusEl = document.getElementById('register-status');
-        if (statusEl) {
-            statusEl.textContent = 'كلمة المرور غير متطابقة';
-            statusEl.className = 'upload-status error';
-            statusEl.style.display = 'block';
-        }
+        showRegisterStatus('كلمة المرور غير متطابقة', 'error');
         return;
     }
     
@@ -314,49 +321,46 @@ async function handleRegisterSubmit() {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: {
-                data: {
-                    full_name: name,
-                    phone: phone,
-                    address: address
-                }
-            }
+            options: { data: { full_name: name, phone: phone, address: address } }
         });
         
         if (error) throw error;
         
-        const statusEl = document.getElementById('register-status');
-        if (statusEl) {
-            statusEl.textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
-            statusEl.className = 'upload-status success';
-            statusEl.style.display = 'block';
-        }
-        
+        showRegisterStatus('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول', 'success');
         document.getElementById('register-form').reset();
         
-        setTimeout(() => {
-            showPage('login');
-        }, 2000);
+        setTimeout(() => showPage('login'), 2000);
     } catch (error) {
         console.error('Error signing up:', error.message);
-        const statusEl = document.getElementById('register-status');
-        if (statusEl) {
-            statusEl.textContent = `فشل في إنشاء الحساب: ${error.message}`;
-            statusEl.className = 'upload-status error';
-            statusEl.style.display = 'block';
-        }
+        showRegisterStatus(`فشل في إنشاء الحساب: ${error.message}`, 'error');
     }
 }
 
-// وظائف التنقل بين الصفحات
-function showPage(pageId) {
+// وظائف التنقل بين الصفحات (معدلة)
+async function showPage(pageId) {
     console.log(`جاري تحميل الصفحة: ${pageId}`);
     
-    // مسح المحتوى الديناميكي
-    document.getElementById('dynamic-content').innerHTML = '<div class="loading">جاري التحميل...</div>';
+    // إظهار رسالة تحميل
+    document.getElementById('dynamic-content').innerHTML = `
+        <div class="loading-page">
+            <div class="loading-spinner"></div>
+            <p>جاري تحميل الصفحة...</p>
+        </div>
+    `;
     
-    // تحميل الصفحة المطلوبة
-    loadPageContent(pageId);
+    try {
+        await loadPageContent(pageId);
+        console.log(`تم تحميل الصفحة بنجاح: ${pageId}`);
+    } catch (error) {
+        console.error(`فشل في تحميل الصفحة: ${pageId}`, error);
+        document.getElementById('dynamic-content').innerHTML = `
+            <div class="error-page">
+                <h1 class="section-title">خطأ في تحميل الصفحة</h1>
+                <p>تعذر تحميل الصفحة المطلوبة: ${error}</p>
+                <button onclick="showPage('home')">العودة إلى الرئيسية</button>
+            </div>
+        `;
+    }
     
     return false;
 }
@@ -367,9 +371,7 @@ function toggleDebug() {
     const debugInfo = document.getElementById('debug-info');
     if (debugInfo) {
         debugInfo.style.display = debugMode ? 'block' : 'none';
-        if (debugMode) {
-            loadDebugInfo();
-        }
+        if (debugMode) loadDebugInfo();
     }
     return false;
 }
@@ -385,6 +387,7 @@ function loadDebugInfo() {
             <p>تم تحميل الصفحة: ${new Date().toLocaleString('ar-SA')}</p>
             <p>حالة المستخدم: ${currentUser ? 'مسجل الدخول' : 'غير مسجل'}</p>
             <p>معلومات المتصفح: ${navigator.userAgent}</p>
+            <p>الصفحة الحالية: ${window.location.href}</p>
         `;
     }
 }
@@ -474,9 +477,7 @@ supabase.auth.onAuthStateChange((event, session) => {
             connectionStatus.textContent = 'تم تسجيل الدخول بنجاح';
             connectionStatus.className = 'connection-status connection-success';
             
-            setTimeout(() => {
-                connectionStatus.style.display = 'none';
-            }, 3000);
+            setTimeout(() => connectionStatus.style.display = 'none', 3000);
         }
     } else if (event === 'SIGNED_OUT') {
         currentUser = null;
@@ -488,27 +489,40 @@ supabase.auth.onAuthStateChange((event, session) => {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('تم تحميل الصفحة، جاري التهيئة');
     
-    // اختبار الاتصال أولاً
     await testConnection();
-    
-    // ثم التحقق من المصادقة
     await checkAuth();
-    
-    // تحميل الصفحة الرئيسية عند البدء
     showPage('home');
 });
 
-// عرض حالة الرفع
+// وظائف عرض الحالة
 function showStatus(message, type) {
     const statusEl = document.getElementById('upload-status');
     if (statusEl) {
         statusEl.textContent = message;
-        statusEl.className = 'upload-status';
-        statusEl.classList.add(type);
+        statusEl.className = `upload-status ${type}`;
         statusEl.style.display = 'block';
     }
 }
 
+function showLoginStatus(message, type) {
+    const statusEl = document.getElementById('login-status');
+    if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `upload-status ${type}`;
+        statusEl.style.display = 'block';
+    }
+}
+
+function showRegisterStatus(message, type) {
+    const statusEl = document.getElementById('register-status');
+    if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `upload-status ${type}`;
+        statusEl.style.display = 'block';
+    }
+}
+
+// باقي الوظائف (loadPosts, displayPosts, uploadImage, addPost) تبقى كما هي
 // تحميل المنشورات من Supabase
 async function loadPosts() {
     try {
@@ -517,19 +531,10 @@ async function loadPosts() {
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (error) {
-            console.error('Error loading posts:', error);
-            const connectionStatus = document.getElementById('connection-status');
-            if (connectionStatus) {
-                connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
-                connectionStatus.className = 'connection-status connection-error';
-            }
-            return;
-        }
-        
+        if (error) throw error;
         displayPosts(posts);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error loading posts:', error);
         const connectionStatus = document.getElementById('connection-status');
         if (connectionStatus) {
             connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
@@ -541,10 +546,7 @@ async function loadPosts() {
 // عرض المنشورات في الصفحة الرئيسية
 function displayPosts(posts) {
     const postsContainer = document.getElementById('posts-container');
-    if (!postsContainer) {
-        console.error('لم يتم العثور على حاوية المنشورات');
-        return;
-    }
+    if (!postsContainer) return;
     
     postsContainer.innerHTML = '';
     
@@ -593,10 +595,7 @@ async function uploadImage(file) {
             .from('marketing')
             .upload(filePath, file);
         
-        if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-            throw new Error(uploadError.message);
-        }
+        if (uploadError) throw uploadError;
         
         const { data: { publicUrl } } = supabase.storage
             .from('marketing')
@@ -604,7 +603,7 @@ async function uploadImage(file) {
         
         return publicUrl;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error uploading image:', error);
         throw error;
     }
 }
@@ -624,15 +623,12 @@ async function addPost(name, description, location, category, price, imageUrl) {
                 user_id: currentUser.email
             }]);
         
-        if (error) {
-            console.error('Error adding post:', error);
-            throw new Error(error.message);
-        }
+        if (error) throw error;
         
         loadPosts();
         return true;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error adding post:', error);
         throw error;
     }
-    }
+                }
