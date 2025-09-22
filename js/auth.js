@@ -1,49 +1,83 @@
-// auth.js
+// auth.js - معدل
 class Auth {
-    // تسجيل الدخول
     static async login(email, password) {
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password: password.trim()
+            });
+
+            if (error) {
+                // تحسين رسائل الخطأ
+                let errorMessage = 'فشل تسجيل الدخول';
+                if (error.message.includes('Invalid login credentials')) {
+                    errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+                } else if (error.message.includes('Email not confirmed')) {
+                    errorMessage = 'يرجى تأكيد البريد الإلكتروني أولاً';
+                }
+                throw new Error(errorMessage);
+            }
+
             currentUser = data.user;
             this.onAuthStateChange();
-            Navigation.showPage('home');
+            
+            // إظهار رسالة نجاح
+            Utils.showStatus('تم تسجيل الدخول بنجاح!', 'success', 'login-status');
+            
+            // الانتقال إلى الصفحة الرئيسية بعد نجاح التسجيل
+            setTimeout(() => {
+                Navigation.showPage('home');
+            }, 1000);
+
             return true;
         } catch (error) {
-            console.error('Error signing in:', error.message);
-            Utils.showStatus(`فشل تسجيل الدخول: ${error.message}`, 'error', 'login-status');
-            return false;
+            console.error('Error signing in:', error);
+            throw error;
         }
     }
 
-    // إنشاء حساب جديد
     static async register(userData) {
         try {
             const { data, error } = await supabase.auth.signUp({
-                email: userData.email,
-                password: userData.password,
+                email: userData.email.trim(),
+                password: userData.password.trim(),
                 options: {
                     data: {
-                        full_name: userData.name,
-                        phone: userData.phone,
-                        address: userData.address
+                        full_name: userData.name.trim(),
+                        phone: userData.phone.trim(),
+                        address: userData.address.trim()
                     }
                 }
             });
-            
-            if (error) throw error;
-            
+
+            if (error) {
+                let errorMessage = 'فشل في إنشاء الحساب';
+                if (error.message.includes('User already registered')) {
+                    errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً';
+                } else if (error.message.includes('Password should be at least')) {
+                    errorMessage = 'كلمة المرور يجب أن تكون أقوى';
+                }
+                throw new Error(errorMessage);
+            }
+
+            // إعادة تعيين النموذج بعد النجاح
+            const form = document.getElementById('register-form');
+            if (form) form.reset();
+
             Utils.showStatus('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول', 'success', 'register-status');
+            
+            // الانتقال إلى صفحة تسجيل الدخول بعد إنشاء الحساب
+            setTimeout(() => {
+                Navigation.showPage('login');
+            }, 2000);
+
             return true;
         } catch (error) {
-            console.error('Error signing up:', error.message);
-            Utils.showStatus(`فشل في إنشاء الحساب: ${error.message}`, 'error', 'register-status');
-            return false;
+            console.error('Error signing up:', error);
+            throw error;
         }
     }
 
-    // تسجيل الخروج
     static async logout() {
         try {
             const { error } = await supabase.auth.signOut();
@@ -58,7 +92,6 @@ class Auth {
         }
     }
 
-    // التحقق من حالة المصادقة
     static async checkAuth() {
         try {
             const { data: { session }, error } = await supabase.auth.getSession();
@@ -70,29 +103,21 @@ class Auth {
             }
         } catch (error) {
             console.error('Error checking auth:', error.message);
-            Utils.showStatus(`خطأ في المصادقة: ${error.message}`, 'error', 'connection-status');
         }
     }
 
-    // معالجة تغيير حالة المصادقة
     static onAuthStateChange() {
         Navigation.updateNavigation();
         
-        const connectionStatus = Utils.getElement('connection-status');
-        if (currentUser && connectionStatus) {
-            connectionStatus.textContent = 'تم تسجيل الدخول بنجاح';
-            connectionStatus.className = 'connection-status connection-success';
-            connectionStatus.style.display = 'block';
-            
-            setTimeout(() => {
-                connectionStatus.style.display = 'none';
-            }, CONFIG.SUCCESS_MESSAGE_DURATION);
+        if (currentUser) {
+            Utils.showStatus('تم تسجيل الدخول بنجاح', 'success', 'connection-status');
         }
     }
 
-    // الاستماع لتغيرات حالة المصادقة
     static initAuthListener() {
         supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event);
+            
             if (event === 'SIGNED_IN' && session?.user) {
                 currentUser = session.user;
                 this.onAuthStateChange();
@@ -102,4 +127,4 @@ class Auth {
             }
         });
     }
-}
+                    }
