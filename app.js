@@ -1,454 +1,496 @@
-// تهيئة Supabase
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// متغيرات التطبيق
-let currentUser = null;
-let debugMode = false;
-
-// تهيئة التطبيق عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-    checkAuthState();
-    loadPosts();
-    
-    // إضافة معالجات الأحداث للنماذج
-    document.getElementById('publish-form').addEventListener('submit', handlePublish);
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
-    document.getElementById('register-form').addEventListener('submit', handleRegister);
-});
-
-// تهيئة التطبيق
-function initializeApp() {
-    console.log('تم تهيئة التطبيق');
-    updateConnectionStatus('جارٍ الاتصال بقاعدة البيانات...', 'info');
-    
-    // اختبار الاتصال بـ Supabase
-    testSupabaseConnection();
-}
-
-// اختبار الاتصال بـ Supabase
-async function testSupabaseConnection() {
-    try {
-        const { data, error } = await supabase.from('posts').select('id').limit(1);
+  // تهيئة Supabase
+        const SUPABASE_URL = 'https://rrjocpzsyxefcsztazkd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyam9jcHpzeXhlZmNzenRhemtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTEzMTgsImV4cCI6MjA3Mzg2NzMxOH0.TvUthkBc_lnDdGlHJdEFUPo4Dl2n2oHyokXZE8_wodw';
         
-        if (error) {
-            console.error('خطأ في الاتصال:', error);
-            updateConnectionStatus('فشل الاتصال بقاعدة البيانات', 'error');
-        } else {
-            console.log('الاتصال ناجح');
-            updateConnectionStatus('متصل بقاعدة البيانات', 'success');
-        }
-    } catch (error) {
-        console.error('خطأ غير متوقع:', error);
-        updateConnectionStatus('خطأ في الاتصال', 'error');
-    }
-}
-
-// تحديث حالة الاتصال
-function updateConnectionStatus(message, type) {
-    const statusElement = document.getElementById('connection-status');
-    statusElement.textContent = message;
-    statusElement.className = 'connection-status';
-    
-    if (type === 'success') {
-        statusElement.classList.add('connected');
-    } else if (type === 'error') {
-        statusElement.classList.add('error');
-    }
-}
-
-// التحقق من حالة المصادقة
-async function checkAuthState() {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
-        currentUser = session.user;
-        updateUIForLoggedInUser();
-        loadUserProfile();
-    } else {
-        currentUser = null;
-        updateUIForLoggedOutUser();
-    }
-}
-
-// تحديث واجهة المستخدم للمستخدم المسجل دخوله
-function updateUIForLoggedInUser() {
-    document.getElementById('publish-link').style.display = 'block';
-    document.getElementById('profile-link').style.display = 'block';
-    document.getElementById('logout-link').style.display = 'block';
-    document.getElementById('login-link').style.display = 'none';
-    document.getElementById('register-link').style.display = 'none';
-    
-    document.getElementById('publish-content').style.display = 'block';
-    document.getElementById('login-required-publish').style.display = 'none';
-    
-    document.getElementById('profile-content').style.display = 'block';
-    document.getElementById('login-required-profile').style.display = 'none';
-}
-
-// تحديث واجهة المستخدم للمستخدم غير المسجل دخوله
-function updateUIForLoggedOutUser() {
-    document.getElementById('publish-link').style.display = 'none';
-    document.getElementById('profile-link').style.display = 'none';
-    document.getElementById('logout-link').style.display = 'none';
-    document.getElementById('login-link').style.display = 'block';
-    document.getElementById('register-link').style.display = 'block';
-    
-    document.getElementById('publish-content').style.display = 'none';
-    document.getElementById('login-required-publish').style.display = 'block';
-    
-    document.getElementById('profile-content').style.display = 'none';
-    document.getElementById('login-required-profile').style.display = 'block';
-}
-
-// تحميل المنشورات
-async function loadPosts() {
-    try {
-        const { data: posts, error } = await supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let debugMode = false;
+        let currentUser = null;
         
-        if (error) {
-            console.error('خطأ في تحميل المنشورات:', error);
-            return;
+        // اختبار اتصال Supabase
+        async function testConnection() {
+            const connectionStatus = document.getElementById('connection-status');
+            try {
+                const { data, error } = await supabase.from('marketing').select('count');
+                
+                if (error) {
+                    console.error('اتصال Supabase فشل:', error);
+                    connectionStatus.textContent = `خطأ في الاتصال: ${error.message}`;
+                    connectionStatus.className = 'connection-status connection-error';
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ الاتصال: ${error.message}</p>`;
+                    }
+                } else {
+                    console.log('اتصال Supabase ناجح');
+                    connectionStatus.textContent = 'الاتصال مع قاعدة البيانات ناجح';
+                    connectionStatus.className = 'connection-status connection-success';
+                    
+                    // إخفاء رسالة النجاح بعد 3 ثوان
+                    setTimeout(() => {
+                        connectionStatus.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('خطأ في اختبار الاتصال:', error);
+                connectionStatus.textContent = `خطأ في الاتصال: ${error.message}`;
+                connectionStatus.className = 'connection-status connection-error';
+            }
         }
         
-        displayPosts(posts || []);
-    } catch (error) {
-        console.error('خطأ غير متوقع في تحميل المنشورات:', error);
-    }
-}
-
-// عرض المنشورات
-function displayPosts(posts) {
-    const postsContainer = document.getElementById('posts-container');
-    
-    if (posts.length === 0) {
-        postsContainer.innerHTML = '<p style="text-align: center; grid-column: 1 / -1;">لا توجد منشورات متاحة حالياً</p>';
-        return;
-    }
-    
-    postsContainer.innerHTML = posts.map(post => `
-        <div class="post-card">
-            ${post.image_url ? `<img src="${post.image_url}" alt="${post.name}" class="post-image">` : ''}
-            <div class="post-content">
-                <h3 class="post-title">${post.name}</h3>
-                <p class="post-description">${post.description}</p>
-                <div class="post-meta">
-                    <span><i class="fas fa-map-marker-alt"></i> ${post.location}</span>
-                    <span><i class="fas fa-tag"></i> ${post.category}</span>
-                    <span><i class="fas fa-money-bill-wave"></i> ${post.price} ريال</span>
-                </div>
-                <div class="post-meta">
-                    <span><i class="fas fa-calendar"></i> ${formatDate(post.created_at)}</span>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// تنسيق التاريخ
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('ar-YE', options);
-}
-
-// معالجة نشر منشور جديد
-async function handlePublish(e) {
-    e.preventDefault();
-    
-    if (!currentUser) {
-        showMessage('يجب تسجيل الدخول أولاً', 'error', 'upload-status');
-        return;
-    }
-    
-    const name = document.getElementById('name').value;
-    const description = document.getElementById('description').value;
-    const location = document.getElementById('location').value;
-    const category = document.getElementById('category').value;
-    const price = document.getElementById('price').value;
-    const imageFile = document.getElementById('image').files[0];
-    
-    try {
-        showMessage('جاري نشر المنشور...', 'info', 'upload-status');
-        
-        let imageUrl = null;
-        
-        // رفع الصورة إذا تم اختيارها
-        if (imageFile) {
-            const fileExt = imageFile.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `${currentUser.id}/${fileName}`;
+        // وظائف التنقل بين الصفحات
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
             
-            const { error: uploadError } = await supabase.storage
-                .from('post-images')
-                .upload(filePath, imageFile);
+            document.getElementById(`${pageId}-page`).classList.add('active');
             
-            if (uploadError) {
-                throw uploadError;
+            // إذا كانت صفحة النشر وتحقق من حالة تسجيل الدخول
+            if (pageId === 'publish') {
+                if (!currentUser) {
+                    document.getElementById('publish-content').style.display = 'none';
+                    document.getElementById('login-required-publish').style.display = 'block';
+                } else {
+                    document.getElementById('publish-content').style.display = 'block';
+                    document.getElementById('login-required-publish').style.display = 'none';
+                }
             }
             
-            const { data: { publicUrl } } = supabase.storage
-                .from('post-images')
-                .getPublicUrl(filePath);
+            // إذا كانت صفحة الملف الشخصي وتحقق من حالة تسجيل الدخول
+            if (pageId === 'profile') {
+                if (!currentUser) {
+                    document.getElementById('profile-content').style.display = 'none';
+                    document.getElementById('login-required-profile').style.display = 'block';
+                } else {
+                    document.getElementById('profile-content').style.display = 'block';
+                    document.getElementById('login-required-profile').style.display = 'none';
+                    loadProfileData();
+                }
+            }
             
-            imageUrl = publicUrl;
+            return false;
         }
         
-        // إدخال البيانات في قاعدة البيانات
-        const { error } = await supabase
-            .from('posts')
-            .insert([
-                {
-                    name,
-                    description,
-                    location,
-                    category,
-                    price: parseInt(price),
-                    image_url: imageUrl,
-                    user_id: currentUser.id
+        // تبديل وضع التصحيح
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug-info').style.display = debugMode ? 'block' : 'none';
+            if (debugMode) {
+                loadDebugInfo();
+            }
+            return false;
+        }
+        
+        // تحميل معلومات التصحيح
+        function loadDebugInfo() {
+            const debugEl = document.getElementById('debug-info');
+            debugEl.innerHTML = `
+                <h3>معلومات التصحيح:</h3>
+                <p>Supabase URL: ${SUPABASE_URL}</p>
+                <p>Supabase Key: ${SUPABASE_KEY.substring(0, 20)}...</p>
+                <p>تم تحميل الصفحة: ${new Date().toLocaleString('ar-SA')}</p>
+                <p>حالة المستخدم: ${currentUser ? 'مسجل الدخول' : 'غير مسجل'}</p>
+                <p>معلومات المتصفح: ${navigator.userAgent}</p>
+            `;
+        }
+        
+        // تحميل بيانات الملف الشخصي
+        function loadProfileData() {
+            if (currentUser) {
+                document.getElementById('profile-name').textContent = currentUser.user_metadata.full_name || 'غير محدد';
+                document.getElementById('profile-email').textContent = currentUser.email;
+                document.getElementById('profile-phone').textContent = currentUser.user_metadata.phone || 'غير محدد';
+                document.getElementById('profile-address').textContent = currentUser.user_metadata.address || 'غير محدد';
+                document.getElementById('profile-created').textContent = new Date(currentUser.created_at).toLocaleString('ar-SA');
+            }
+        }
+        
+        // تحديث واجهة المستخدم بناءً على حالة تسجيل الدخول
+        function updateUIForAuth() {
+            if (currentUser) {
+                document.getElementById('publish-link').style.display = 'list-item';
+                document.getElementById('profile-link').style.display = 'list-item';
+                document.getElementById('logout-link').style.display = 'list-item';
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('register-link').style.display = 'none';
+            } else {
+                document.getElementById('publish-link').style.display = 'none';
+                document.getElementById('profile-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('login-link').style.display = 'list-item';
+                document.getElementById('register-link').style.display = 'list-item';
+            }
+        }
+        
+        // تسجيل الخروج
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                
+                currentUser = null;
+                updateUIForAuth();
+                showPage('home');
+            } catch (error) {
+                console.error('Error signing out:', error.message);
+                alert(`خطأ في تسجيل الخروج: ${error.message}`);
+            }
+        }
+        
+        // التحقق من حالة المصادقة عند تحميل الصفحة
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                
+                if (session?.user) {
+                    currentUser = session.user;
+                    updateUIForAuth();
                 }
-            ]);
-        
-        if (error) {
-            throw error;
+            } catch (error) {
+                console.error('Error checking auth:', error.message);
+                document.getElementById('connection-status').textContent = `خطأ في المصادقة: ${error.message}`;
+                document.getElementById('connection-status').className = 'connection-status connection-error';
+            }
         }
         
-        showMessage('تم نشر المنشور بنجاح', 'success', 'upload-status');
-        
-        // إعادة تعيين النموذج
-        document.getElementById('publish-form').reset();
-        
-        // إعادة تحميل المنشورات
-        loadPosts();
-        
-        // العودة إلى الصفحة الرئيسية
-        setTimeout(() => showPage('home'), 2000);
-        
-    } catch (error) {
-        console.error('خطأ في النشر:', error);
-        showMessage('حدث خطأ أثناء النشر: ' + error.message, 'error', 'upload-status');
-    }
-}
-
-// معالجة تسجيل الدخول
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    
-    try {
-        showMessage('جاري تسجيل الدخول...', 'info', 'login-status');
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
+        // الاستماع لتغيرات حالة المصادقة
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                currentUser = session.user;
+                updateUIForAuth();
+                document.getElementById('connection-status').textContent = 'تم تسجيل الدخول بنجاح';
+                document.getElementById('connection-status').className = 'connection-status connection-success';
+                
+                setTimeout(() => {
+                    document.getElementById('connection-status').style.display = 'none';
+                }, 3000);
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                updateUIForAuth();
+            }
         });
         
-        if (error) {
-            throw error;
-        }
-        
-        showMessage('تم تسجيل الدخول بنجاح', 'success', 'login-status');
-        currentUser = data.user;
-        
-        // تحديث الواجهة
-        updateUIForLoggedInUser();
-        loadUserProfile();
-        
-        // إعادة تعيين النموذج
-        document.getElementById('login-form').reset();
-        
-        // الانتقال إلى الصفحة الرئيسية
-        setTimeout(() => showPage('home'), 1000);
-        
-    } catch (error) {
-        console.error('خطأ في تسجيل الدخول:', error);
-        showMessage('فشل تسجيل الدخول: ' + error.message, 'error', 'login-status');
-    }
-}
-
-// معالجة إنشاء حساب
-async function handleRegister(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById('register-name').value;
-    const phone = document.getElementById('register-phone').value;
-    const address = document.getElementById('register-address').value;
-    const email = document.getElementById('register-email').value;
-    const password = document.getElementById('register-password').value;
-    const confirmPassword = document.getElementById('register-confirm-password').value;
-    
-    // التحقق من تطابق كلمات المرور
-    if (password !== confirmPassword) {
-        showMessage('كلمتا المرور غير متطابقتين', 'error', 'register-status');
-        return;
-    }
-    
-    try {
-        showMessage('جاري إنشاء الحساب...', 'info', 'register-status');
-        
-        // إنشاء المستخدم في المصادقة
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password
+        // تحميل المنشورات عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', async () => {
+            // اختبار الاتصال أولاً
+            await testConnection();
+            
+            // ثم التحقق من المصادقة
+            await checkAuth();
+            
+            // ثم تحميل المنشورات
+            loadPosts();
+            
+            // إعداد نموذج النشر
+            document.getElementById('publish-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!currentUser) {
+                    showStatus('يجب تسجيل الدخول لنشر منشور', 'error');
+                    showPage('login');
+                    return;
+                }
+                
+                const name = document.getElementById('name').value;
+                const description = document.getElementById('description').value;
+                const location = document.getElementById('location').value;
+                const category = document.getElementById('category').value;
+                const price = document.getElementById('price').value;
+                const imageFile = document.getElementById('image').files[0];
+                
+                let imageUrl = null;
+                
+                try {
+                    // إذا تم رفع صورة
+                    if (imageFile) {
+                        // التحقق من حجم الصورة
+                        if (imageFile.size > 5 * 1024 * 1024) {
+                            showStatus('حجم الصورة كبير جداً. الحد الأقصى هو 5MB', 'error');
+                            return;
+                        }
+                        
+                        showStatus('جاري رفع الصورة...', 'success');
+                        
+                        // رفع الصورة إلى Supabase Storage
+                        imageUrl = await uploadImage(imageFile);
+                        
+                        if (!imageUrl) {
+                            showStatus('فشل في رفع الصورة', 'error');
+                            return;
+                        }
+                    }
+                    
+                    if (name && description && location && category && price) {
+                        showStatus('جاري نشر المنشور...', 'success');
+                        
+                        const success = await addPost(name, description, location, category, price, imageUrl);
+                        
+                        if (success) {
+                            // إعادة تعيين النموذج
+                            document.getElementById('publish-form').reset();
+                            
+                            // إظهار رسالة نجاح
+                            showStatus('تم نشر المنشور بنجاح!', 'success');
+                            
+                            // الانتظار قليلاً ثم العودة إلى الصفحة الرئيسية
+                            setTimeout(() => {
+                                document.getElementById('upload-status').classList.remove('success');
+                                document.getElementById('upload-status').style.display = 'none';
+                                showPage('home');
+                            }, 1500);
+                        } else {
+                            showStatus('فشل في نشر المنشور', 'error');
+                        }
+                    } else {
+                        showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(`فشل في نشر المنشور: ${error.message}`, 'error');
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ: ${error.message}</p>`;
+                    }
+                }
+            });
+            
+            // إعداد نموذج تسجيل الدخول
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    
+                    if (error) throw error;
+                    
+                    currentUser = data.user;
+                    updateUIForAuth();
+                    showPage('home');
+                } catch (error) {
+                    console.error('Error signing in:', error.message);
+                    document.getElementById('login-status').textContent = `فشل تسجيل الدخول: ${error.message}`;
+                    document.getElementById('login-status').className = 'upload-status error';
+                    document.getElementById('login-status').style.display = 'block';
+                }
+            });
+            
+            // إعداد نموذج إنشاء حساب
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('register-name').value;
+                const phone = document.getElementById('register-phone').value;
+                const address = document.getElementById('register-address').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                
+                // التحقق من تطابق كلمة المرور
+                if (password !== confirmPassword) {
+                    document.getElementById('register-status').textContent = 'كلمة المرور غير متطابقة';
+                    document.getElementById('register-status').className = 'upload-status error';
+                    document.getElementById('register-status').style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: name,
+                                phone: phone,
+                                address: address
+                            }
+                        }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    document.getElementById('register-status').textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
+                    document.getElementById('register-status').className = 'upload-status success';
+                    document.getElementById('register-status').style.display = 'block';
+                    
+                    // إعادة تعيين النموذج
+                    document.getElementById('register-form').reset();
+                    
+                    // الانتظار قليلاً ثم الانتقال إلى صفحة تسجيل الدخول
+                    setTimeout(() => {
+                        showPage('login');
+                    }, 2000);
+                } catch (error) {
+                    console.error('Error signing up:', error.message);
+                    document.getElementById('register-status').textContent = `فشل في إنشاء الحساب: ${error.message}`;
+                    document.getElementById('register-status').className = 'upload-status error';
+                    document.getElementById('register-status').style.display = 'block';
+                }
+            });
         });
         
-        if (authError) {
-            throw authError;
+        // عرض حالة الرفع
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('upload-status');
+            statusEl.textContent = message;
+            statusEl.className = 'upload-status';
+            statusEl.classList.add(type);
+            statusEl.style.display = 'block';
         }
         
-        // إضافة بيانات المستخدم الإضافية إلى جدول المستخدمين
-        const { error: profileError } = await supabase
-            .from('users')
-            .insert([
-                {
-                    id: authData.user.id,
-                    name,
-                    phone,
-                    address,
-                    email
+        // تحميل المنشورات من Supabase
+        async function loadPosts() {
+            try {
+                const { data: posts, error } = await supabase
+                    .from('marketing')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading posts:', error);
+                    document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+                    document.getElementById('connection-status').className = 'connection-status connection-error';
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
+                    }
+                    return;
                 }
-            ]);
-        
-        if (profileError) {
-            throw profileError;
+                
+                displayPosts(posts);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+                document.getElementById('connection-status').className = 'connection-status connection-error';
+                
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
+                }
+            }
         }
         
-        showMessage('تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.', 'success', 'register-status');
-        
-        // إعادة تعيين النموذج
-        document.getElementById('register-form').reset();
-        
-        // الانتقال إلى صفحة تسجيل الدخول
-        setTimeout(() => showPage('login'), 2000);
-        
-    } catch (error) {
-        console.error('خطأ في إنشاء الحساب:', error);
-        showMessage('فشل إنشاء الحساب: ' + error.message, 'error', 'register-status');
-    }
-}
-
-// تحميل بيانات الملف الشخصي
-async function loadUserProfile() {
-    if (!currentUser) return;
-    
-    try {
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-        
-        if (error) {
-            console.error('خطأ في تحميل الملف الشخصي:', error);
-            return;
+        // عرض المنشورات في الصفحة الرئيسية
+        function displayPosts(posts) {
+            const postsContainer = document.getElementById('posts-container');
+            postsContainer.innerHTML = '';
+            
+            if (!posts || posts.length === 0) {
+                postsContainer.innerHTML = '<p>لا توجد منشورات بعد.</p>';
+                return;
+            }
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post-card';
+                
+                // إضافة صورة إذا كانت موجودة
+                const imageHtml = post.image_url 
+                    ? `<img src="${post.image_url}" alt="${post.name}" class="post-image">`
+                    : `<div class="post-image no-image">لا توجد صورة</div>`;
+                
+                // تنسيق السعر
+                const formattedPrice = new Intl.NumberFormat('ar-YE').format(post.price) + " ريال يمني";
+                
+                postElement.innerHTML = `
+                    ${imageHtml}
+                    <h3 class="post-title">${post.name}</h3>
+                    <p class="post-description">${post.description}</p>
+                    <div class="post-details">
+                        <span class="post-detail post-price"><i class="fas fa-money-bill-wave"></i> ${formattedPrice}</span>
+                        <span class="post-detail"><i class="fas fa-tag"></i> ${post.category}</span>
+                        <span class="post-detail"><i class="fas fa-map-marker-alt"></i> ${post.location}</span>
+                    </div>
+                    <div class="post-author">
+                        <i class="fas fa-user"></i> 
+                        ${post.user_id ? `تم النشر بواسطة: ${post.user_id}` : 'مستخدم غير معروف'}
+                    </div>
+                    <small>${new Date(post.created_at).toLocaleString('ar-SA')}</small>
+                `;
+                postsContainer.appendChild(postElement);
+            });
         }
         
-        if (user) {
-            document.getElementById('profile-name').textContent = user.name;
-            document.getElementById('profile-email').textContent = user.email;
-            document.getElementById('profile-phone').textContent = user.phone;
-            document.getElementById('profile-address').textContent = user.address;
-            document.getElementById('profile-created').textContent = formatDate(user.created_at);
+        // رفع الصورة إلى Supabase Storage
+        async function uploadImage(file) {
+            try {
+                // إنشاء اسم فريد للصورة
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+                
+                // رفع الصورة إلى bucket المسمى "marketing"
+                const { data, error: uploadError } = await supabase.storage
+                    .from('marketing')
+                    .upload(filePath, file);
+                
+                if (uploadError) {
+                    console.error('Error uploading image:', uploadError);
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${uploadError.message}</p>`;
+                    }
+                    throw new Error(uploadError.message);
+                }
+                
+                // الحصول على رابط الصورة
+                const { data: { publicUrl } } = supabase.storage
+                    .from('marketing')
+                    .getPublicUrl(filePath);
+                
+                return publicUrl;
+            } catch (error) {
+                console.error('Error:', error);
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${error.message}</p>`;
+                }
+                throw error;
+            }
         }
-    } catch (error) {
-        console.error('خطأ غير متوقع في تحميل الملف الشخصي:', error);
-    }
-}
-
-// تسجيل الخروج
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
         
-        if (error) {
-            throw error;
+        // إضافة منشور جديد إلى Supabase
+        async function addPost(name, description, location, category, price, imageUrl) {
+            try {
+                const { data, error } = await supabase
+                    .from('marketing')
+                    .insert([{ 
+                        name,
+                        description, 
+                        location,
+                        category,
+                        price,
+                        image_url: imageUrl,
+                        user_id: currentUser.email // استخدام البريد الإلكتروني كمعرف للمستخدم
+                    }]);
+                
+                if (error) {
+                    console.error('Error adding post:', error);
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
+                    }
+                    throw new Error(error.message);
+                }
+                
+                // إعادة تحميل المنشورات بعد الإضافة
+                loadPosts();
+                return true;
+            } catch (error) {
+                console.error('Error:', error);
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
+                }
+                throw error;
+            }
         }
-        
-        currentUser = null;
-        updateUIForLoggedOutUser();
-        showPage('home');
-        
-    } catch (error) {
-        console.error('خطأ في تسجيل الخروج:', error);
-        alert('حدث خطأ أثناء تسجيل الخروج: ' + error.message);
-    }
-}
-
-// تبديل الصفحات
-function showPage(pageId) {
-    // إخفاء جميع الصفحات
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    
-    // إظهار الصفحة المطلوبة
-    document.getElementById(`${pageId}-page`).classList.add('active');
-    
-    // إذا كانت الصفحة الرئيسية، إعادة تحميل المنشورات
-    if (pageId === 'home') {
-        loadPosts();
-    }
-}
-
-// عرض رسالة
-function showMessage(message, type, elementId) {
-    const element = document.getElementById(elementId);
-    element.textContent = message;
-    element.className = 'upload-status';
-    
-    if (type === 'success') {
-        element.classList.add('success');
-    } else if (type === 'error') {
-        element.classList.add('error');
-    }
-    
-    element.style.display = 'block';
-    
-    // إخفاء الرسالة بعد 5 ثواني
-    setTimeout(() => {
-        element.style.display = 'none';
-    }, 5000);
-}
-
-// تبديل وضع التصحيح
-function toggleDebug() {
-    debugMode = !debugMode;
-    const debugInfo = document.getElementById('debug-info');
-    
-    if (debugMode) {
-        debugInfo.style.display = 'block';
-        updateDebugInfo();
-    } else {
-        debugInfo.style.display = 'none';
-    }
-}
-
-// تحديث معلومات التصحيح
-function updateDebugInfo() {
-    const debugInfo = document.getElementById('debug-info');
-    
-    const debugData = {
-        currentUser: currentUser ? {
-            id: currentUser.id,
-            email: currentUser.email
-        } : null,
-        timestamp: new Date().toISOString(),
-        debugMode: debugMode
-    };
-    
-    debugInfo.textContent = JSON.stringify(debugData, null, 2);
-}
-
-// تحديث معلومات التصحيح كل 5 ثواني عند تفعيل الوضع
-setInterval(() => {
-    if (debugMode) {
-        updateDebugInfo();
-    }
-}, 5000);
