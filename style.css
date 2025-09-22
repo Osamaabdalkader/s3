@@ -1,3 +1,10 @@
+.loading {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: var(--primary-color);
+}
+
 :root {
     --primary-color: #2c3e50;
     --secondary-color: #1a73e8;
@@ -421,3 +428,9 @@ footer {
         font-size: 1.6rem;
     }
                                 }
+
+
+
+
+
+
