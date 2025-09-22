@@ -19,7 +19,9 @@ async function testConnection() {
             
             if (debugMode) {
                 const debugEl = document.getElementById('debug-info');
-                debugEl.innerHTML += `<p>خطأ الاتصال: ${error.message}</p>`;
+                if (debugEl) {
+                    debugEl.innerHTML += `<p>خطأ الاتصال: ${error.message}</p>`;
+                }
             }
         } else {
             console.log('اتصال Supabase ناجح');
@@ -46,6 +48,8 @@ async function loadPublishPage() {
             throw new Error('فشل في تحميل صفحة النشر');
         }
         const html = await response.text();
+        
+        // إضافة المحتوى إلى منطقة المحتوى الديناميكي
         document.getElementById('dynamic-content').innerHTML = html;
         
         // بعد تحميل المحتوى، نقوم بربط الأحداث
@@ -72,7 +76,11 @@ async function loadPublishPage() {
 function bindPublishFormEvents() {
     const publishForm = document.getElementById('publish-form');
     if (publishForm) {
-        publishForm.addEventListener('submit', async (e) => {
+        // إزالة أي مستمعين سابقين لتجنب التكرار
+        publishForm.replaceWith(publishForm.cloneNode(true));
+        const newPublishForm = document.getElementById('publish-form');
+        
+        newPublishForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (!currentUser) {
@@ -124,8 +132,11 @@ function bindPublishFormEvents() {
                         
                         // الانتظار قليلاً ثم العودة إلى الصفحة الرئيسية
                         setTimeout(() => {
-                            document.getElementById('upload-status').classList.remove('success');
-                            document.getElementById('upload-status').style.display = 'none';
+                            const statusEl = document.getElementById('upload-status');
+                            if (statusEl) {
+                                statusEl.classList.remove('success');
+                                statusEl.style.display = 'none';
+                            }
                             showPage('home');
                         }, 1500);
                     } else {
@@ -140,7 +151,9 @@ function bindPublishFormEvents() {
                 
                 if (debugMode) {
                     const debugEl = document.getElementById('debug-info');
-                    debugEl.innerHTML += `<p>خطأ: ${error.message}</p>`;
+                    if (debugEl) {
+                        debugEl.innerHTML += `<p>خطأ: ${error.message}</p>`;
+                    }
                 }
             }
         });
@@ -149,16 +162,29 @@ function bindPublishFormEvents() {
 
 // وظائف التنقل بين الصفحات
 function showPage(pageId) {
+    // إخفاء جميع الصفحات
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
     
+    // مسح المحتوى الديناميكي
     document.getElementById('dynamic-content').innerHTML = '';
     
     if (pageId === 'publish') {
-        loadPublishPage();
+        // تحميل صفحة النشر ديناميكيًا
+        loadPublishPage().then(() => {
+            // بعد تحميل المحتوى، إظهاره
+            const publishPage = document.getElementById('publish-page');
+            if (publishPage) {
+                publishPage.style.display = 'block';
+            }
+        });
     } else {
-        document.getElementById(`${pageId}-page`).classList.add('active');
+        // إظهار الصفحة المطلوبة
+        const targetPage = document.getElementById(`${pageId}-page`);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
         
         // إذا كانت صفحة الملف الشخصي وتحقق من حالة تسجيل الدخول
         if (pageId === 'profile') {
