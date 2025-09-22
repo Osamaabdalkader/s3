@@ -25,19 +25,11 @@ async function testConnection() {
             console.error('اتصال Supabase فشل:', error);
             connectionStatus.textContent = `خطأ في الاتصال: ${error.message}`;
             connectionStatus.className = 'connection-status connection-error';
-            
-            if (debugMode) {
-                const debugEl = document.getElementById('debug-info');
-                if (debugEl) {
-                    debugEl.innerHTML += `<p>خطأ الاتصال: ${error.message}</p>`;
-                }
-            }
         } else {
             console.log('اتصال Supabase ناجح');
             connectionStatus.textContent = 'الاتصال مع قاعدة البيانات ناجح';
             connectionStatus.className = 'connection-status connection-success';
             
-            // إخفاء رسالة النجاح بعد 3 ثوان
             setTimeout(() => {
                 connectionStatus.style.display = 'none';
             }, 3000);
@@ -62,35 +54,28 @@ async function loadPageContent(pageId) {
     try {
         const response = await fetch(pageFiles[pageId]);
         if (!response.ok) {
-            throw new Error(`فشل في تحميل صفحة ${pageId}: ${response.status}`);
+            throw new Error(`فشل في تحميل صفحة ${pageId}`);
         }
         const html = await response.text();
         
         // إضافة المحتوى إلى منطقة المحتوى الديناميكي
         document.getElementById('dynamic-content').innerHTML = html;
         
-        // بعد تحميل المحتوى، نقوم بربط الأحداث الخاصة بالصفحة
-        bindPageEvents(pageId);
+        // الانتظار قليلاً لضمان تحميل DOM ثم ربط الأحداث
+        setTimeout(() => {
+            bindPageEvents(pageId);
+            handlePageSpecificLogic(pageId);
+        }, 50);
         
-        // معالجة خاصة لكل صفحة
-        handlePageSpecificLogic(pageId);
-        
-        console.log(`تم تحميل الصفحة بنجاح: ${pageId}`);
         return true;
     } catch (error) {
-        console.error(`خطأ في تحميل صفحة ${pageId}:`, error);
-        document.getElementById('dynamic-content').innerHTML = `
-            <div class="page">
-                <h1 class="section-title">خطأ في تحميل الصفحة</h1>
-                <p>تعذر تحميل الصفحة المطلوبة: ${error.message}</p>
-                <button onclick="showPage('home')">العودة إلى الرئيسية</button>
-            </div>
-        `;
+        console.error(`Error loading ${pageId} page:`, error);
+        document.getElementById('dynamic-content').innerHTML = `<p>خطأ في تحميل الصفحة: ${error.message}</p>`;
         return false;
     }
 }
 
-// ربط أحداث الصفحة بعد تحميلها
+// ربط أحداث الصفحة بعد تحميلها (معدل)
 function bindPageEvents(pageId) {
     console.log(`جاري ربط أحداث الصفحة: ${pageId}`);
     
@@ -108,7 +93,6 @@ function bindPageEvents(pageId) {
             // لا تحتاج صفحة الملف الشخصي إلى ربط أحداث خاصة
             break;
         case 'home':
-            // تحميل المنشورات للصفحة الرئيسية
             loadPosts();
             break;
     }
@@ -157,7 +141,7 @@ function handlePageSpecificLogic(pageId) {
     }
 }
 
-// ربط أحداث نموذج النشر
+// ربط أحداث نموذج النشر (معدل)
 function bindPublishFormEvents() {
     const publishForm = document.getElementById('publish-form');
     if (publishForm) {
@@ -167,93 +151,78 @@ function bindPublishFormEvents() {
         const newForm = publishForm.cloneNode(true);
         publishForm.parentNode.replaceChild(newForm, publishForm);
         
-        // إعادة الحصول على النموذج بعد الاستبدال
-        const freshForm = document.getElementById('publish-form');
-        
-        freshForm.addEventListener('submit', async (e) => {
+        document.getElementById('publish-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log('تم تقديم نموذج النشر');
             
-            if (!currentUser) {
-                showStatus('يجب تسجيل الدخول لنشر منشور', 'error');
-                showPage('login');
-                return;
-            }
-            
-            const name = document.getElementById('name').value;
-            const description = document.getElementById('description').value;
-            const location = document.getElementById('location').value;
-            const category = document.getElementById('category').value;
-            const price = document.getElementById('price').value;
-            const imageFile = document.getElementById('image').files[0];
-            
-            let imageUrl = null;
-            
-            try {
-                // إذا تم رفع صورة
-                if (imageFile) {
-                    // التحقق من حجم الصورة
-                    if (imageFile.size > 5 * 1024 * 1024) {
-                        showStatus('حجم الصورة كبير جداً. الحد الأقصى هو 5MB', 'error');
-                        return;
-                    }
-                    
-                    showStatus('جاري رفع الصورة...', 'success');
-                    
-                    // رفع الصورة إلى Supabase Storage
-                    imageUrl = await uploadImage(imageFile);
-                    
-                    if (!imageUrl) {
-                        showStatus('فشل في رفع الصورة', 'error');
-                        return;
-                    }
-                }
-                
-                if (name && description && location && category && price) {
-                    showStatus('جاري نشر المنشور...', 'success');
-                    
-                    const success = await addPost(name, description, location, category, price, imageUrl);
-                    
-                    if (success) {
-                        // إعادة تعيين النموذج
-                        document.getElementById('publish-form').reset();
-                        
-                        // إظهار رسالة نجاح
-                        showStatus('تم نشر المنشور بنجاح!', 'success');
-                        
-                        // الانتظار قليلاً ثم العودة إلى الصفحة الرئيسية
-                        setTimeout(() => {
-                            const statusEl = document.getElementById('upload-status');
-                            if (statusEl) {
-                                statusEl.classList.remove('success');
-                                statusEl.style.display = 'none';
-                            }
-                            showPage('home');
-                        }, 1500);
-                    } else {
-                        showStatus('فشل في نشر المنشور', 'error');
-                    }
-                } else {
-                    showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showStatus(`فشل في نشر المنشور: ${error.message}`, 'error');
-                
-                if (debugMode) {
-                    const debugEl = document.getElementById('debug-info');
-                    if (debugEl) {
-                        debugEl.innerHTML += `<p>خطأ: ${error.message}</p>`;
-                    }
-                }
-            }
+            await handlePublishSubmit();
         });
     } else {
         console.error('لم يتم العثور على نموذج النشر');
     }
 }
 
-// ربط أحداث نموذج تسجيل الدخول
+// معالجة تقديم نموذج النشر
+async function handlePublishSubmit() {
+    if (!currentUser) {
+        showStatus('يجب تسجيل الدخول لنشر منشور', 'error');
+        showPage('login');
+        return;
+    }
+    
+    const name = document.getElementById('name').value;
+    const description = document.getElementById('description').value;
+    const location = document.getElementById('location').value;
+    const category = document.getElementById('category').value;
+    const price = document.getElementById('price').value;
+    const imageFile = document.getElementById('image').files[0];
+    
+    let imageUrl = null;
+    
+    try {
+        if (imageFile) {
+            if (imageFile.size > 5 * 1024 * 1024) {
+                showStatus('حجم الصورة كبير جداً. الحد الأقصى هو 5MB', 'error');
+                return;
+            }
+            
+            showStatus('جاري رفع الصورة...', 'success');
+            imageUrl = await uploadImage(imageFile);
+            
+            if (!imageUrl) {
+                showStatus('فشل في رفع الصورة', 'error');
+                return;
+            }
+        }
+        
+        if (name && description && location && category && price) {
+            showStatus('جاري نشر المنشور...', 'success');
+            const success = await addPost(name, description, location, category, price, imageUrl);
+            
+            if (success) {
+                document.getElementById('publish-form').reset();
+                showStatus('تم نشر المنشور بنجاح!', 'success');
+                
+                setTimeout(() => {
+                    const statusEl = document.getElementById('upload-status');
+                    if (statusEl) {
+                        statusEl.style.display = 'none';
+                    }
+                    showPage('home');
+                }, 1500);
+            } else {
+                showStatus('فشل في نشر المنشور', 'error');
+            }
+        } else {
+            showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showStatus(`فشل في نشر المنشور: ${error.message}`, 'error');
+    }
+}
+
+// ربط أحداث نموذج تسجيل الدخول (معدل بشكل جذري)
 function bindLoginFormEvents() {
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
@@ -263,43 +232,45 @@ function bindLoginFormEvents() {
         const newForm = loginForm.cloneNode(true);
         loginForm.parentNode.replaceChild(newForm, loginForm);
         
-        // إعادة الحصول على النموذج بعد الاستبدال
-        const freshForm = document.getElementById('login-form');
-        
-        freshForm.addEventListener('submit', async (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log('تم تقديم نموذج تسجيل الدخول');
             
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-                
-                if (error) throw error;
-                
-                currentUser = data.user;
-                updateUIForAuth();
-                showPage('home');
-            } catch (error) {
-                console.error('Error signing in:', error.message);
-                const statusEl = document.getElementById('login-status');
-                if (statusEl) {
-                    statusEl.textContent = `فشل تسجيل الدخول: ${error.message}`;
-                    statusEl.className = 'upload-status error';
-                    statusEl.style.display = 'block';
-                }
-            }
+            await handleLoginSubmit();
         });
     } else {
         console.error('لم يتم العثور على نموذج تسجيل الدخول');
     }
 }
 
-// ربط أحداث نموذج إنشاء حساب
+// معالجة تقديم نموذج تسجيل الدخول
+async function handleLoginSubmit() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) throw error;
+        
+        currentUser = data.user;
+        updateUIForAuth();
+        showPage('home');
+    } catch (error) {
+        console.error('Error signing in:', error.message);
+        const statusEl = document.getElementById('login-status');
+        if (statusEl) {
+            statusEl.textContent = `فشل تسجيل الدخول: ${error.message}`;
+            statusEl.className = 'upload-status error';
+            statusEl.style.display = 'block';
+        }
+    }
+}
+
+// ربط أحداث نموذج إنشاء حساب (معدل بشكل جذري)
 function bindRegisterFormEvents() {
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
@@ -309,72 +280,71 @@ function bindRegisterFormEvents() {
         const newForm = registerForm.cloneNode(true);
         registerForm.parentNode.replaceChild(newForm, registerForm);
         
-        // إعادة الحصول على النموذج بعد الاستبدال
-        const freshForm = document.getElementById('register-form');
-        
-        freshForm.addEventListener('submit', async (e) => {
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log('تم تقديم نموذج إنشاء حساب');
             
-            const name = document.getElementById('register-name').value;
-            const phone = document.getElementById('register-phone').value;
-            const address = document.getElementById('register-address').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
-            
-            // التحقق من تطابق كلمة المرور
-            if (password !== confirmPassword) {
-                const statusEl = document.getElementById('register-status');
-                if (statusEl) {
-                    statusEl.textContent = 'كلمة المرور غير متطابقة';
-                    statusEl.className = 'upload-status error';
-                    statusEl.style.display = 'block';
-                }
-                return;
-            }
-            
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            full_name: name,
-                            phone: phone,
-                            address: address
-                        }
-                    }
-                });
-                
-                if (error) throw error;
-                
-                const statusEl = document.getElementById('register-status');
-                if (statusEl) {
-                    statusEl.textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
-                    statusEl.className = 'upload-status success';
-                    statusEl.style.display = 'block';
-                }
-                
-                // إعادة تعيين النموذج
-                document.getElementById('register-form').reset();
-                
-                // الانتظار قليلاً ثم الانتقال إلى صفحة تسجيل الدخول
-                setTimeout(() => {
-                    showPage('login');
-                }, 2000);
-            } catch (error) {
-                console.error('Error signing up:', error.message);
-                const statusEl = document.getElementById('register-status');
-                if (statusEl) {
-                    statusEl.textContent = `فشل في إنشاء الحساب: ${error.message}`;
-                    statusEl.className = 'upload-status error';
-                    statusEl.style.display = 'block';
-                }
-            }
+            await handleRegisterSubmit();
         });
     } else {
         console.error('لم يتم العثور على نموذج إنشاء حساب');
+    }
+}
+
+// معالجة تقديم نموذج إنشاء حساب
+async function handleRegisterSubmit() {
+    const name = document.getElementById('register-name').value;
+    const phone = document.getElementById('register-phone').value;
+    const address = document.getElementById('register-address').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
+    
+    if (password !== confirmPassword) {
+        const statusEl = document.getElementById('register-status');
+        if (statusEl) {
+            statusEl.textContent = 'كلمة المرور غير متطابقة';
+            statusEl.className = 'upload-status error';
+            statusEl.style.display = 'block';
+        }
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: name,
+                    phone: phone,
+                    address: address
+                }
+            }
+        });
+        
+        if (error) throw error;
+        
+        const statusEl = document.getElementById('register-status');
+        if (statusEl) {
+            statusEl.textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
+            statusEl.className = 'upload-status success';
+            statusEl.style.display = 'block';
+        }
+        
+        document.getElementById('register-form').reset();
+        
+        setTimeout(() => {
+            showPage('login');
+        }, 2000);
+    } catch (error) {
+        console.error('Error signing up:', error.message);
+        const statusEl = document.getElementById('register-status');
+        if (statusEl) {
+            statusEl.textContent = `فشل في إنشاء الحساب: ${error.message}`;
+            statusEl.className = 'upload-status error';
+            statusEl.style.display = 'block';
+        }
     }
 }
 
@@ -554,13 +524,6 @@ async function loadPosts() {
                 connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
                 connectionStatus.className = 'connection-status connection-error';
             }
-            
-            if (debugMode) {
-                const debugEl = document.getElementById('debug-info');
-                if (debugEl) {
-                    debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
-                }
-            }
             return;
         }
         
@@ -571,13 +534,6 @@ async function loadPosts() {
         if (connectionStatus) {
             connectionStatus.textContent = `خطأ في تحميل المنشورات: ${error.message}`;
             connectionStatus.className = 'connection-status connection-error';
-        }
-        
-        if (debugMode) {
-            const debugEl = document.getElementById('debug-info');
-            if (debugEl) {
-                debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
-            }
         }
     }
 }
@@ -601,12 +557,10 @@ function displayPosts(posts) {
         const postElement = document.createElement('div');
         postElement.className = 'post-card';
         
-        // إضافة صورة إذا كانت موجودة
         const imageHtml = post.image_url 
             ? `<img src="${post.image_url}" alt="${post.name}" class="post-image">`
             : `<div class="post-image no-image">لا توجد صورة</div>`;
         
-        // تنسيق السعر
         const formattedPrice = new Intl.NumberFormat('ar-YE').format(post.price) + " ريال يمني";
         
         postElement.innerHTML = `
@@ -631,28 +585,19 @@ function displayPosts(posts) {
 // رفع الصورة إلى Supabase Storage
 async function uploadImage(file) {
     try {
-        // إنشاء اسم فريد للصورة
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
         
-        // رفع الصورة إلى bucket المسمى "marketing"
         const { data, error: uploadError } = await supabase.storage
             .from('marketing')
             .upload(filePath, file);
         
         if (uploadError) {
             console.error('Error uploading image:', uploadError);
-            if (debugMode) {
-                const debugEl = document.getElementById('debug-info');
-                if (debugEl) {
-                    debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${uploadError.message}</p>`;
-                }
-            }
             throw new Error(uploadError.message);
         }
         
-        // الحصول على رابط الصورة
         const { data: { publicUrl } } = supabase.storage
             .from('marketing')
             .getPublicUrl(filePath);
@@ -660,12 +605,6 @@ async function uploadImage(file) {
         return publicUrl;
     } catch (error) {
         console.error('Error:', error);
-        if (debugMode) {
-            const debugEl = document.getElementById('debug-info');
-            if (debugEl) {
-                debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${error.message}</p>`;
-            }
-        }
         throw error;
     }
 }
@@ -682,31 +621,18 @@ async function addPost(name, description, location, category, price, imageUrl) {
                 category,
                 price,
                 image_url: imageUrl,
-                user_id: currentUser.email // استخدام البريد الإلكتروني كمعرف للمستخدم
+                user_id: currentUser.email
             }]);
         
         if (error) {
             console.error('Error adding post:', error);
-            if (debugMode) {
-                const debugEl = document.getElementById('debug-info');
-                if (debugEl) {
-                    debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
-                }
-            }
             throw new Error(error.message);
         }
         
-        // إعادة تحميل المنشورات بعد الإضافة
         loadPosts();
         return true;
     } catch (error) {
         console.error('Error:', error);
-        if (debugMode) {
-            const debugEl = document.getElementById('debug-info');
-            if (debugEl) {
-                debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
-            }
-        }
         throw error;
     }
-}
+    }
