@@ -1,6 +1,5 @@
-// posts.js
+// posts.js - إضافة وظيفة النشر
 class Posts {
-    // تحميل المنشورات
     static async loadPosts() {
         try {
             const { data: posts, error } = await supabase
@@ -9,7 +8,6 @@ class Posts {
                 .order('created_at', { ascending: false });
             
             if (error) throw error;
-            
             this.displayPosts(posts);
         } catch (error) {
             console.error('Error loading posts:', error);
@@ -17,9 +15,63 @@ class Posts {
         }
     }
 
-    // عرض المنشورات
+    static async publishPost(postData) {
+        try {
+            let imageUrl = null;
+            
+            // رفع الصورة إذا وجدت
+            if (postData.imageFile && postData.imageFile.size > 0) {
+                imageUrl = await this.uploadImage(postData.imageFile);
+            }
+
+            // إضافة المنشور إلى قاعدة البيانات
+            const { data, error } = await supabase
+                .from('marketing')
+                .insert([{ 
+                    name: postData.name,
+                    description: postData.description, 
+                    location: postData.location,
+                    category: postData.category,
+                    price: parseFloat(postData.price),
+                    image_url: imageUrl,
+                    user_id: currentUser.email
+                }]);
+            
+            if (error) throw error;
+            
+            // إعادة تحميل المنشورات
+            this.loadPosts();
+            return true;
+        } catch (error) {
+            console.error('Error publishing post:', error);
+            throw error;
+        }
+    }
+
+    static async uploadImage(file) {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            
+            const { data, error } = await supabase.storage
+                .from('marketing')
+                .upload(fileName, file);
+            
+            if (error) throw error;
+            
+            const { data: { publicUrl } } = supabase.storage
+                .from('marketing')
+                .getPublicUrl(fileName);
+            
+            return publicUrl;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
+        }
+    }
+
     static displayPosts(posts) {
-        const postsContainer = Utils.getElement('posts-container');
+        const postsContainer = document.getElementById('posts-container');
         if (!postsContainer) return;
         
         postsContainer.innerHTML = '';
@@ -55,57 +107,4 @@ class Posts {
             postsContainer.appendChild(postElement);
         });
     }
-
-    // إضافة منشور جديد
-    static async addPost(postData) {
-        try {
-            const { data, error } = await supabase
-                .from('marketing')
-                .insert([{ 
-                    name: postData.name,
-                    description: postData.description, 
-                    location: postData.location,
-                    category: postData.category,
-                    price: postData.price,
-                    image_url: postData.imageUrl,
-                    user_id: currentUser.email
-                }]);
-            
-            if (error) throw error;
-            
-            this.loadPosts();
-            return true;
-        } catch (error) {
-            console.error('Error adding post:', error);
-            throw error;
-        }
-    }
-
-    // رفع صورة
-    static async uploadImage(file) {
-        try {
-            if (file.size > CONFIG.MAX_IMAGE_SIZE) {
-                throw new Error('حجم الصورة كبير جداً');
-            }
-            
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-            const filePath = `${fileName}`;
-            
-            const { data, error: uploadError } = await supabase.storage
-                .from('marketing')
-                .upload(filePath, file);
-            
-            if (uploadError) throw uploadError;
-            
-            const { data: { publicUrl } } = supabase.storage
-                .from('marketing')
-                .getPublicUrl(filePath);
-            
-            return publicUrl;
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            throw error;
-        }
-    }
-}
+                    }
