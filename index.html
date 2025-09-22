@@ -6,7 +6,431 @@
     <title>منصة تسريع الإلكترونية</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #1a73e8;
+            --accent-color: #0f9d58;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f7f9;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-left: 10px;
+            color: var(--accent-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 1.8rem;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-links a i {
+            margin-left: 8px;
+        }
+        
+        .nav-links a:hover {
+            opacity: 0.9;
+        }
+        
+        .page {
+            display: none;
+            padding: 2rem 0;
+        }
+        
+        .active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            text-align: center;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+        
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .post-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border-top: 5px solid var(--secondary-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .post-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--hover-shadow);
+        }
+        
+        .post-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .post-title {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .post-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .post-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .post-detail {
+            background-color: #f0f5ff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            color: var(--secondary-color);
+        }
+        
+        .post-detail i {
+            margin-left: 5px;
+        }
+        
+        .post-price {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .post-author {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .post-author i {
+            margin-left: 8px;
+            color: var(--secondary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-left: 8px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .no-image {
+            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-style: italic;
+            border-radius: 8px;
+        }
+        
+        .upload-status {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .debug-info {
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .auth-form {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .profile-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .profile-info {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-label i {
+            margin-left: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .login-required {
+            text-align: center;
+            padding: 40px 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .form-icon {
+            position: relative;
+        }
+        
+        .form-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .form-icon input, .form-icon select, .form-icon textarea {
+            padding-right: 45px;
+        }
+        
+        .connection-status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        
+        .connection-success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .connection-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .posts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-links li {
+                margin: 0.5rem 0;
+            }
+            
+            .section-title {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -220,6 +644,503 @@
         </div>
     </footer>
 
-    <script src="app.js"></script>
+    <script>
+        // تهيئة Supabase
+        const SUPABASE_URL = 'https://rrjocpzsyxefcsztazkd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyam9jcHpzeXhlZmNzenRhemtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTEzMTgsImV4cCI6MjA3Mzg2NzMxOH0.TvUthkBc_lnDdGlHJdEFUPo4Dl2n2oHyokXZE8_wodw';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let debugMode = false;
+        let currentUser = null;
+        
+        // اختبار اتصال Supabase
+        async function testConnection() {
+            const connectionStatus = document.getElementById('connection-status');
+            try {
+                const { data, error } = await supabase.from('marketing').select('count');
+                
+                if (error) {
+                    console.error('اتصال Supabase فشل:', error);
+                    connectionStatus.textContent = `خطأ في الاتصال: ${error.message}`;
+                    connectionStatus.className = 'connection-status connection-error';
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ الاتصال: ${error.message}</p>`;
+                    }
+                } else {
+                    console.log('اتصال Supabase ناجح');
+                    connectionStatus.textContent = 'الاتصال مع قاعدة البيانات ناجح';
+                    connectionStatus.className = 'connection-status connection-success';
+                    
+                    // إخفاء رسالة النجاح بعد 3 ثوان
+                    setTimeout(() => {
+                        connectionStatus.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('خطأ في اختبار الاتصال:', error);
+                connectionStatus.textContent = `خطأ في الاتصال: ${error.message}`;
+                connectionStatus.className = 'connection-status connection-error';
+            }
+        }
+        
+        // وظائف التنقل بين الصفحات
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            document.getElementById(`${pageId}-page`).classList.add('active');
+            
+            // إذا كانت صفحة النشر وتحقق من حالة تسجيل الدخول
+            if (pageId === 'publish') {
+                if (!currentUser) {
+                    document.getElementById('publish-content').style.display = 'none';
+                    document.getElementById('login-required-publish').style.display = 'block';
+                } else {
+                    document.getElementById('publish-content').style.display = 'block';
+                    document.getElementById('login-required-publish').style.display = 'none';
+                }
+            }
+            
+            // إذا كانت صفحة الملف الشخصي وتحقق من حالة تسجيل الدخول
+            if (pageId === 'profile') {
+                if (!currentUser) {
+                    document.getElementById('profile-content').style.display = 'none';
+                    document.getElementById('login-required-profile').style.display = 'block';
+                } else {
+                    document.getElementById('profile-content').style.display = 'block';
+                    document.getElementById('login-required-profile').style.display = 'none';
+                    loadProfileData();
+                }
+            }
+            
+            return false;
+        }
+        
+        // تبديل وضع التصحيح
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug-info').style.display = debugMode ? 'block' : 'none';
+            if (debugMode) {
+                loadDebugInfo();
+            }
+            return false;
+        }
+        
+        // تحميل معلومات التصحيح
+        function loadDebugInfo() {
+            const debugEl = document.getElementById('debug-info');
+            debugEl.innerHTML = `
+                <h3>معلومات التصحيح:</h3>
+                <p>Supabase URL: ${SUPABASE_URL}</p>
+                <p>Supabase Key: ${SUPABASE_KEY.substring(0, 20)}...</p>
+                <p>تم تحميل الصفحة: ${new Date().toLocaleString('ar-SA')}</p>
+                <p>حالة المستخدم: ${currentUser ? 'مسجل الدخول' : 'غير مسجل'}</p>
+                <p>معلومات المتصفح: ${navigator.userAgent}</p>
+            `;
+        }
+        
+        // تحميل بيانات الملف الشخصي
+        function loadProfileData() {
+            if (currentUser) {
+                document.getElementById('profile-name').textContent = currentUser.user_metadata.full_name || 'غير محدد';
+                document.getElementById('profile-email').textContent = currentUser.email;
+                document.getElementById('profile-phone').textContent = currentUser.user_metadata.phone || 'غير محدد';
+                document.getElementById('profile-address').textContent = currentUser.user_metadata.address || 'غير محدد';
+                document.getElementById('profile-created').textContent = new Date(currentUser.created_at).toLocaleString('ar-SA');
+            }
+        }
+        
+        // تحديث واجهة المستخدم بناءً على حالة تسجيل الدخول
+        function updateUIForAuth() {
+            if (currentUser) {
+                document.getElementById('publish-link').style.display = 'list-item';
+                document.getElementById('profile-link').style.display = 'list-item';
+                document.getElementById('logout-link').style.display = 'list-item';
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('register-link').style.display = 'none';
+            } else {
+                document.getElementById('publish-link').style.display = 'none';
+                document.getElementById('profile-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'none';
+                document.getElementById('login-link').style.display = 'list-item';
+                document.getElementById('register-link').style.display = 'list-item';
+            }
+        }
+        
+        // تسجيل الخروج
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                
+                currentUser = null;
+                updateUIForAuth();
+                showPage('home');
+            } catch (error) {
+                console.error('Error signing out:', error.message);
+                alert(`خطأ في تسجيل الخروج: ${error.message}`);
+            }
+        }
+        
+        // التحقق من حالة المصادقة عند تحميل الصفحة
+        async function checkAuth() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                
+                if (session?.user) {
+                    currentUser = session.user;
+                    updateUIForAuth();
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error.message);
+                document.getElementById('connection-status').textContent = `خطأ في المصادقة: ${error.message}`;
+                document.getElementById('connection-status').className = 'connection-status connection-error';
+            }
+        }
+        
+        // الاستماع لتغيرات حالة المصادقة
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                currentUser = session.user;
+                updateUIForAuth();
+                document.getElementById('connection-status').textContent = 'تم تسجيل الدخول بنجاح';
+                document.getElementById('connection-status').className = 'connection-status connection-success';
+                
+                setTimeout(() => {
+                    document.getElementById('connection-status').style.display = 'none';
+                }, 3000);
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                updateUIForAuth();
+            }
+        });
+        
+        // تحميل المنشورات عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', async () => {
+            // اختبار الاتصال أولاً
+            await testConnection();
+            
+            // ثم التحقق من المصادقة
+            await checkAuth();
+            
+            // ثم تحميل المنشورات
+            loadPosts();
+            
+            // إعداد نموذج النشر
+            document.getElementById('publish-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!currentUser) {
+                    showStatus('يجب تسجيل الدخول لنشر منشور', 'error');
+                    showPage('login');
+                    return;
+                }
+                
+                const name = document.getElementById('name').value;
+                const description = document.getElementById('description').value;
+                const location = document.getElementById('location').value;
+                const category = document.getElementById('category').value;
+                const price = document.getElementById('price').value;
+                const imageFile = document.getElementById('image').files[0];
+                
+                let imageUrl = null;
+                
+                try {
+                    // إذا تم رفع صورة
+                    if (imageFile) {
+                        // التحقق من حجم الصورة
+                        if (imageFile.size > 5 * 1024 * 1024) {
+                            showStatus('حجم الصورة كبير جداً. الحد الأقصى هو 5MB', 'error');
+                            return;
+                        }
+                        
+                        showStatus('جاري رفع الصورة...', 'success');
+                        
+                        // رفع الصورة إلى Supabase Storage
+                        imageUrl = await uploadImage(imageFile);
+                        
+                        if (!imageUrl) {
+                            showStatus('فشل في رفع الصورة', 'error');
+                            return;
+                        }
+                    }
+                    
+                    if (name && description && location && category && price) {
+                        showStatus('جاري نشر المنشور...', 'success');
+                        
+                        const success = await addPost(name, description, location, category, price, imageUrl);
+                        
+                        if (success) {
+                            // إعادة تعيين النموذج
+                            document.getElementById('publish-form').reset();
+                            
+                            // إظهار رسالة نجاح
+                            showStatus('تم نشر المنشور بنجاح!', 'success');
+                            
+                            // الانتظار قليلاً ثم العودة إلى الصفحة الرئيسية
+                            setTimeout(() => {
+                                document.getElementById('upload-status').classList.remove('success');
+                                document.getElementById('upload-status').style.display = 'none';
+                                showPage('home');
+                            }, 1500);
+                        } else {
+                            showStatus('فشل في نشر المنشور', 'error');
+                        }
+                    } else {
+                        showStatus('يرجى ملء جميع الحقول المطلوبة', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(`فشل في نشر المنشور: ${error.message}`, 'error');
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ: ${error.message}</p>`;
+                    }
+                }
+            });
+            
+            // إعداد نموذج تسجيل الدخول
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    
+                    if (error) throw error;
+                    
+                    currentUser = data.user;
+                    updateUIForAuth();
+                    showPage('home');
+                } catch (error) {
+                    console.error('Error signing in:', error.message);
+                    document.getElementById('login-status').textContent = `فشل تسجيل الدخول: ${error.message}`;
+                    document.getElementById('login-status').className = 'upload-status error';
+                    document.getElementById('login-status').style.display = 'block';
+                }
+            });
+            
+            // إعداد نموذج إنشاء حساب
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('register-name').value;
+                const phone = document.getElementById('register-phone').value;
+                const address = document.getElementById('register-address').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                
+                // التحقق من تطابق كلمة المرور
+                if (password !== confirmPassword) {
+                    document.getElementById('register-status').textContent = 'كلمة المرور غير متطابقة';
+                    document.getElementById('register-status').className = 'upload-status error';
+                    document.getElementById('register-status').style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: name,
+                                phone: phone,
+                                address: address
+                            }
+                        }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    document.getElementById('register-status').textContent = 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول';
+                    document.getElementById('register-status').className = 'upload-status success';
+                    document.getElementById('register-status').style.display = 'block';
+                    
+                    // إعادة تعيين النموذج
+                    document.getElementById('register-form').reset();
+                    
+                    // الانتظار قليلاً ثم الانتقال إلى صفحة تسجيل الدخول
+                    setTimeout(() => {
+                        showPage('login');
+                    }, 2000);
+                } catch (error) {
+                    console.error('Error signing up:', error.message);
+                    document.getElementById('register-status').textContent = `فشل في إنشاء الحساب: ${error.message}`;
+                    document.getElementById('register-status').className = 'upload-status error';
+                    document.getElementById('register-status').style.display = 'block';
+                }
+            });
+        });
+        
+        // عرض حالة الرفع
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('upload-status');
+            statusEl.textContent = message;
+            statusEl.className = 'upload-status';
+            statusEl.classList.add(type);
+            statusEl.style.display = 'block';
+        }
+        
+        // تحميل المنشورات من Supabase
+        async function loadPosts() {
+            try {
+                const { data: posts, error } = await supabase
+                    .from('marketing')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading posts:', error);
+                    document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+                    document.getElementById('connection-status').className = 'connection-status connection-error';
+                    
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
+                    }
+                    return;
+                }
+                
+                displayPosts(posts);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('connection-status').textContent = `خطأ في تحميل المنشورات: ${error.message}`;
+                document.getElementById('connection-status').className = 'connection-status connection-error';
+                
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في تحميل المنشورات: ${error.message}</p>`;
+                }
+            }
+        }
+        
+        // عرض المنشورات في الصفحة الرئيسية
+        function displayPosts(posts) {
+            const postsContainer = document.getElementById('posts-container');
+            postsContainer.innerHTML = '';
+            
+            if (!posts || posts.length === 0) {
+                postsContainer.innerHTML = '<p>لا توجد منشورات بعد.</p>';
+                return;
+            }
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post-card';
+                
+                // إضافة صورة إذا كانت موجودة
+                const imageHtml = post.image_url 
+                    ? `<img src="${post.image_url}" alt="${post.name}" class="post-image">`
+                    : `<div class="post-image no-image">لا توجد صورة</div>`;
+                
+                // تنسيق السعر
+                const formattedPrice = new Intl.NumberFormat('ar-YE').format(post.price) + " ريال يمني";
+                
+                postElement.innerHTML = `
+                    ${imageHtml}
+                    <h3 class="post-title">${post.name}</h3>
+                    <p class="post-description">${post.description}</p>
+                    <div class="post-details">
+                        <span class="post-detail post-price"><i class="fas fa-money-bill-wave"></i> ${formattedPrice}</span>
+                        <span class="post-detail"><i class="fas fa-tag"></i> ${post.category}</span>
+                        <span class="post-detail"><i class="fas fa-map-marker-alt"></i> ${post.location}</span>
+                    </div>
+                    <div class="post-author">
+                        <i class="fas fa-user"></i> 
+                        ${post.user_id ? `تم النشر بواسطة: ${post.user_id}` : 'مستخدم غير معروف'}
+                    </div>
+                    <small>${new Date(post.created_at).toLocaleString('ar-SA')}</small>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        }
+        
+        // رفع الصورة إلى Supabase Storage
+        async function uploadImage(file) {
+            try {
+                // إنشاء اسم فريد للصورة
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+                
+                // رفع الصورة إلى bucket المسمى "marketing"
+                const { data, error: uploadError } = await supabase.storage
+                    .from('marketing')
+                    .upload(filePath, file);
+                
+                if (uploadError) {
+                    console.error('Error uploading image:', uploadError);
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${uploadError.message}</p>`;
+                    }
+                    throw new Error(uploadError.message);
+                }
+                
+                // الحصول على رابط الصورة
+                const { data: { publicUrl } } = supabase.storage
+                    .from('marketing')
+                    .getPublicUrl(filePath);
+                
+                return publicUrl;
+            } catch (error) {
+                console.error('Error:', error);
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في رفع الصورة: ${error.message}</p>`;
+                }
+                throw error;
+            }
+        }
+        
+        // إضافة منشور جديد إلى Supabase
+        async function addPost(name, description, location, category, price, imageUrl) {
+            try {
+                const { data, error } = await supabase
+                    .from('marketing')
+                    .insert([{ 
+                        name,
+                        description, 
+                        location,
+                        category,
+                        price,
+                        image_url: imageUrl,
+                        user_id: currentUser.email // استخدام البريد الإلكتروني كمعرف للمستخدم
+                    }]);
+                
+                if (error) {
+                    console.error('Error adding post:', error);
+                    if (debugMode) {
+                        const debugEl = document.getElementById('debug-info');
+                        debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
+                    }
+                    throw new Error(error.message);
+                }
+                
+                // إعادة تحميل المنشورات بعد الإضافة
+                loadPosts();
+                return true;
+            } catch (error) {
+                console.error('Error:', error);
+                if (debugMode) {
+                    const debugEl = document.getElementById('debug-info');
+                    debugEl.innerHTML += `<p>خطأ في إضافة المنشور: ${error.message}</p>`;
+                }
+                throw error;
+            }
+        }
+    </script>
 </body>
     </html>
