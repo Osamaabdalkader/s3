@@ -1,4 +1,4 @@
-<!-- صفحة النشر -->
+<!-- add-post.html -->
 <section id="publish-page" class="page">
     <h1 class="section-title">نشر منشور جديد</h1>
     <div id="publish-content">
@@ -6,15 +6,17 @@
         <form id="publish-form">
             <div class="form-group form-icon">
                 <label for="name"><i class="fas fa-heading"></i> اسم المنشور:</label>
-                <input type="text" id="name" required>
+                <input type="text" id="name" name="name" required>
+                <!-- تم إضافة name="name" -->
             </div>
             <div class="form-group form-icon">
                 <label for="description"><i class="fas fa-align-left"></i> الوصف:</label>
-                <textarea id="description" required></textarea>
+                <textarea id="description" name="description" required></textarea>
+                <!-- تم إضافة name="description" -->
             </div>
             <div class="form-group form-icon">
                 <label for="location"><i class="fas fa-map-marker-alt"></i> الموقع:</label>
-                <select id="location" required>
+                <select id="location" name="location" required>
                     <option value="">اختر الموقع</option>
                     <option value="صنعاء">صنعاء</option>
                     <option value="عدن">عدن</option>
@@ -30,10 +32,11 @@
                     <option value="لحج">لحج</option>
                     <option value="أخرى">أخرى</option>
                 </select>
+                <!-- تم إضافة name="location" -->
             </div>
             <div class="form-group form-icon">
                 <label for="category"><i class="fas fa-tag"></i> النوع:</label>
-                <select id="category" required>
+                <select id="category" name="category" required>
                     <option value="">اختر النوع</option>
                     <option value="أدوية">أدوية</option>
                     <option value="أثاث">أثاث</option>
@@ -45,14 +48,17 @@
                     <option value="خدمات">خدمات</option>
                     <option value="أخرى">أخرى</option>
                 </select>
+                <!-- تم إضافة name="category" -->
             </div>
             <div class="form-group form-icon">
                 <label for="price"><i class="fas fa-money-bill-wave"></i> السعر (ريال يمني):</label>
-                <input type="number" id="price" min="0" required>
+                <input type="number" id="price" name="price" min="0" required>
+                <!-- تم إضافة name="price" -->
             </div>
             <div class="form-group">
                 <label for="image"><i class="fas fa-image"></i> صورة (اختياري):</label>
-                <input type="file" id="image" accept="image/*">
+                <input type="file" id="image" name="image" accept="image/*">
+                <!-- تم إضافة name="image" -->
                 <small>يمكنك رفع صورة لتعزيز منشورك (الحجم الأقصى: 5MB)</small>
             </div>
             <button type="submit"><i class="fas fa-paper-plane"></i> نشر</button>
@@ -62,8 +68,8 @@
     <div id="login-required-publish" class="login-required" style="display: none;">
         <h2>يجب تسجيل الدخول لنشر منشور</h2>
         <p>يجب أن تكون مسجلاً في الموقع لنشر منشور جديد.</p>
-        <button onclick="showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
-        <button onclick="showPage('register')" class="btn-secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+        <button onclick="Navigation.showPage('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+        <button onclick="Navigation.showPage('register')" class="btn-secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
     </div>
     
     <div id="debug-info" class="debug-info"></div>
