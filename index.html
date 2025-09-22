@@ -7,6 +7,8 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <!-- إضافة base href لحل مشكلة المسارات على GitHub Pages -->
+    <base href="./">
 </head>
 <body>
     <header>
@@ -32,8 +34,8 @@
     <main class="container">
         <div id="connection-status" class="connection-status"></div>
         
-        <!-- منطقة المحتوى الديناميكي -->
-        <div id="dynamic-content"></div>
+        <!-- منطقة المحتوى الديناميكي مع event delegation -->
+        <div id="dynamic-content" onclick="handleDynamicContentClick(event)"></div>
     </main>
 
     <footer>
